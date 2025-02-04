@@ -13,7 +13,10 @@ class Request:
         # 1) separate header & body
         # head_body = [0] --> request line & header | [1] --> body
         head_body_separator = request.split(b"\r\n\r\n", 1)
-        self.body = head_body_separator[1]
+        if (len(head_body_separator) > 1):
+            self.body = head_body_separator[1]
+        else:
+            self.body = b""
 
         # 2) Convert the header from raw bytes to string
         header_strings = head_body_separator[0].decode("utf-8")
@@ -30,11 +33,23 @@ class Request:
         self.http_version = request_line_split[2]
 
         # 4) for all idx> 0 in header_strings[idx] --> they are all headers
-        for i in range(1, len(request_line_split)):
-            self.headers.append(request_line_split[i])
+        # 5) if there are cookies header, store them
+        for i in range(1, len(header_strings)):
+            curr_header = header_strings[i]
+            curr_header_split = curr_header.split(":", 1)
+            curr_key = curr_header_split[0].strip()
+            curr_value = curr_header_split[1].strip()
 
-        # 5) Cookies
+            if curr_key == "Cookie":
+                cookie_list = curr_header_split[1].split(";")
+                for cookie in cookie_list:
+                    key_value_split = cookie.split("=")
+                    curr_cookie_key = key_value_split[0]
+                    curr_cookie_value = key_value_split[1]
+                    self.cookies[curr_cookie_key] = curr_cookie_value
+            else:
 
+                self.headers[curr_key] = curr_value
 
 
 def test1():
