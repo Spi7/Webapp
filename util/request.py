@@ -20,13 +20,14 @@ class Request:
 
         # 2) Convert the header from raw bytes to string
         header_strings = head_body_separator[0].decode("utf-8")
+        header_strings_split = header_strings.split("\r\n")
 
         # 3) [0] in header_strings will be the request_line, rest will be headers
         """
             request line contains:
                 [0]--> Method type | [1]--> path | [2]--> http version | all separate by a space 
         """
-        request_line = header_strings[0]
+        request_line = header_strings_split[0]
         request_line_split = request_line.split(" ")
         self.method = request_line_split[0]
         self.path = request_line_split[1]
@@ -34,8 +35,8 @@ class Request:
 
         # 4) for all idx> 0 in header_strings[idx] --> they are all headers
         # 5) if there are cookies header, store them
-        for i in range(1, len(header_strings)):
-            curr_header = header_strings[i]
+        for i in range(1, len(header_strings_split)):
+            curr_header = header_strings_split[i]
             curr_header_split = curr_header.split(":", 1)
             curr_key = curr_header_split[0].strip()
             curr_value = curr_header_split[1].strip()
