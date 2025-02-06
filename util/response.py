@@ -27,7 +27,7 @@ class Response:
     def cookies(self, cookies):
         #store all the cookies Set-Cookies haven't set up yet at this stage
         for curr_key, curr_value in cookies.items():
-            self.cookies[curr_key] = curr_value
+            self.cookies[curr_key] = {"value": curr_value, "maxAge": "3600"}
         return self
 
     def bytes(self, data):
@@ -44,6 +44,8 @@ class Response:
         return self
 
     def to_data(self):
+        #Set cookie with expiration date? directives? check on that
+
         # 1) first line of the response
         status_line = "HTTP/1.1" + " " + self.status_code + " " + self.status_message + "\r\n"
 
@@ -58,7 +60,8 @@ class Response:
         # 4) Get the cookies into 1 string
         cookies = ""
         for cookie_key, cookie_value in self.cookies.items():
-            cookies += "Set-Cookie: " + cookie_key + "=" + cookie_value + "\r\n"
+            cookies += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
+            cookies += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
