@@ -31,7 +31,7 @@ class Response:
 
     def bytes(self, data):
         self.body += data
-        self.header["Content-Length"] = str((len(self.body))) #update content length everytime? or should i update it all at once in to_data?
+        self.header["Content-Length"] = str(len(self.body)) #update content length everytime? or should i update it all at once in to_data?
         return self
 
     def text(self, data):
@@ -40,6 +40,7 @@ class Response:
     def json(self, data):
         self.body = json.dumps(data).encode('utf-8')
         self.header["Content-Type"] = "application/json"
+        self.header["Content-Length"] = str(len(self.body))  #Update the content length
         return self
 
     def to_data(self):
@@ -52,21 +53,21 @@ class Response:
         self.header["X-Content-Type-Options"] = "nosniff"
 
         # 3) Get the headers into 1 string
-        headers = ""
+        header_str = ""
         for curr_header, curr_value in self.header.items():
-            headers += curr_header + ": " + curr_value + "\r\n"
+            header_str += curr_header + ": " + curr_value + "\r\n"
 
         # 4) Get the cookies into 1 string
-        cookies = ""
+        cookie_str = ""
         for cookie_key, cookie_value in self.cookie.items():
-            cookies += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
-            cookies += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
-            cookies += "; Secure\r\n"
-            cookies += "; HttpOnly\r\n"
+            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
+            cookie_str += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
+            cookie_str += "; Secure\r\n"
+            cookie_str += "; HttpOnly\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
-        response = (status_line + headers + cookies + "\r\n").encode('utf-8') + self.body
+        response = (status_line + header_str + cookie_str + "\r\n").encode('utf-8') + self.body
         #conflict dealing
         return response
 
