@@ -26,7 +26,10 @@ class Response:
     def cookies(self, cookies):
         #store all the cookies Set-Cookies haven't set up yet at this stage
         for curr_key, curr_value in cookies.items():
-            self.cookie[curr_key] = {"value": curr_value, "maxAge": "3600"}
+            curr_value_split = curr_value.split("=")
+            cookie_key = curr_value_split[0]
+            cookie_value = curr_value_split[1]
+            self.cookie[cookie_key] = cookie_value
         return self
 
     def bytes(self, data):
@@ -60,8 +63,8 @@ class Response:
         # 4) Get the cookies into 1 string
         cookie_str = ""
         for cookie_key, cookie_value in self.cookie.items():
-            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
-            cookie_str += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
+            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value + "\r\n"
+            cookie_str += "; Max-Age=" + "3600" + "\r\n"
             cookie_str += "; Secure\r\n"
             cookie_str += "; HttpOnly\r\n"
 
@@ -78,6 +81,14 @@ def test1():
     expected = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 5\r\n\r\nhello'
     actual = res.to_data()
 
+def test_w_multiple_cookies():
+    res = Response()
+    dict = {"Set-Cookie": "cookie1=value1", "Set-Cookie": "cookie2=value2", "Set-Cookie": "cookie3=value3"}
+    res.cookies(dict)
+    expected = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 0\r\nSet-Cookie: cookie1=value1; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie2=value2; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie3=value3; Max-Age=3600; Secure; HttpOnly\r\n\r\n'
+    actual = res.to_data()
+
 
 if __name__ == '__main__':
-    test1()
+    #test1()
+    test_w_multiple_cookies()
