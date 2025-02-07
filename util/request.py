@@ -39,7 +39,7 @@ class Request:
             curr_key = curr_header_split[0].strip()
             curr_value = curr_header_split[1].strip()
 
-            self.headers[curr_key] = curr_value
+            self.headers[curr_key] = curr_value #should keep the raw cookies too
 
             if curr_key == "Cookie":
                 cookie_list = curr_value.split(";")

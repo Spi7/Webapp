@@ -67,7 +67,7 @@ class Response:
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
         response = (status_line + headers + cookies + "\r\n").encode('utf-8') + self.body
-
+        #conflict dealing
         return response
 
 
