@@ -30,5 +30,6 @@ class Router:
                         return
 
         #No match occurs
-        res = Response().set_status("404", "404 Not Found")
+        res = Response()
+        res.set_status("404", "404 Not Found")
         handler.request.sendall(res.to_data())
