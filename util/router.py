@@ -16,14 +16,15 @@ class Router:
         request_method = request.method
         request_path = request.path
 
-        #S
+        # Matching
         for route in self.routes:
             route_method = route["method"]
             route_path = route["path"]
-            if route_method == request_method and route_path == request_path:
+            if route_method == request_method:
                 if route["exact_path"]:
-                    route["action"](request, handler)
-                    return
+                    if route_path == request_path:
+                        route["action"](request, handler)
+                        return
                 else:
                     if request_path.startswith(route_path):
                         route["action"](request, handler)
@@ -31,6 +32,6 @@ class Router:
 
         #No match occurs
         res = Response()
-        res.set_status("404", "Not Found")
+        res.set_status(404, "Not Found")
         res.text("404 Not Found, The page you requested " + request_path + " was not found.") #this displayed correctly
         handler.request.sendall(res.to_data())
