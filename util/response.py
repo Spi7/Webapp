@@ -61,6 +61,8 @@ class Response:
         for cookie_key, cookie_value in self.cookie.items():
             cookies += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
             cookies += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
+            cookies += "; Secure\r\n"
+            cookies += "; HttpOnly\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
