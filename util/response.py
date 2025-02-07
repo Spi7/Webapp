@@ -52,20 +52,22 @@ class Response:
         self.header["X-Content-Type-Options"] = "nosniff"
 
         # 3) Get the headers into 1 string
-        headers_str = ""
+        headers = ""
         for curr_header, curr_value in self.header.items():
-            headers_str += curr_header + ": " + curr_value + "\r\n"
+            headers += curr_header + ": " + curr_value + "\r\n"
 
         # 4) Get the cookies into 1 string
-        cookies_str = ""
+        cookies = ""
         for cookie_key, cookie_value in self.cookie.items():
-            cookies_str += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
-            cookies_str += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
+            cookies += "Set-Cookie: " + cookie_key + "=" + cookie_value["value"]
+            cookies += "; Max-Age=" + cookie_value["maxAge"] + "\r\n"
+            cookies += "; Secure\r\n"
+            cookies += "; HttpOnly\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
-        response = (status_line + headers_str + cookies_str + "\r\n").encode('utf-8') + self.body
-
+        response = (status_line + headers + cookies + "\r\n").encode('utf-8') + self.body
+        #conflict dealing
         return response
 
 

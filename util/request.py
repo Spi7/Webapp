@@ -29,7 +29,7 @@ class Request:
         request_line_split = request_line.split(" ")
         self.method = request_line_split[0]
         self.path = request_line_split[1]
-        self.http_version = request_line_split[2]
+        self.http_version = request_line_split[2] #always be "HTTP/1.1"
 
         # 4) for all idx> 0 in header_strings[idx] --> they are all headers
         # 5) if there are cookies header, store them
@@ -39,6 +39,8 @@ class Request:
             curr_key = curr_header_split[0].strip()
             curr_value = curr_header_split[1].strip()
 
+            self.headers[curr_key] = curr_value #should keep the raw cookies too
+
             if curr_key == "Cookie":
                 cookie_list = curr_value.split(";")
                 for cookie in cookie_list:
@@ -46,8 +48,6 @@ class Request:
                     curr_cookie_key = key_value_split[0].strip()
                     curr_cookie_value = key_value_split[1].strip()
                     self.cookies[curr_cookie_key] = curr_cookie_value
-            else:
-                self.headers[curr_key] = curr_value
 
 
 def test1():
@@ -75,12 +75,14 @@ def test_w_cookies():
     assert request.cookies["cookie3"] == "value3"
 
 def test_post_w_body():
-    request = Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nCookie: #### WAS RIGHT HERE \r\n\r\nhello')
+    request = Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nCookie: cookie1=value1\r\n\r\nhello')
     assert request.method == "POST"
     assert "Content-Type" in request.headers
     assert request.headers["Content-Type"] == "text/plain"
     assert "Content-Length" in request.headers
     assert request.headers["Content-Length"] == "5"
+    assert len(request.cookies) == 1
+    assert request.cookies["cookie1"] == "value1"
     assert request.body == b"hello"
 
 if __name__ == '__main__':
