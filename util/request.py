@@ -13,10 +13,8 @@ class Request:
         # 1) separate header & body
         # head_body = [0] --> request line & header | [1] --> body
         head_body_separator = request.split(b"\r\n\r\n", 1)
-        if (len(head_body_separator) > 1):
+        if len(head_body_separator) > 1:
             self.body = head_body_separator[1]
-        else:
-            self.body = b""
 
         # 2) Convert the header from raw bytes to string
         header_strings = head_body_separator[0].decode("utf-8")
@@ -42,14 +40,13 @@ class Request:
             curr_value = curr_header_split[1].strip()
 
             if curr_key == "Cookie":
-                cookie_list = curr_header_split[1].split(";")
+                cookie_list = curr_value.split(";")
                 for cookie in cookie_list:
                     key_value_split = cookie.split("=")
-                    curr_cookie_key = key_value_split[0]
-                    curr_cookie_value = key_value_split[1]
+                    curr_cookie_key = key_value_split[0].strip()
+                    curr_cookie_value = key_value_split[1].strip()
                     self.cookies[curr_cookie_key] = curr_cookie_value
             else:
-
                 self.headers[curr_key] = curr_value
 
 
@@ -65,6 +62,28 @@ def test1():
     # It's recommended that you complete this test and add others, including at least one
     # test using a POST request. Also, ensure that the types of all values are correct
 
+def test_w_cookies():
+    request = Request(b'GET / HTTP/1.1\r\nHost: localhost:8080\r\nCookie: cookie1=value1; cookie2=value2; cookie3=value3\r\nConnection: keep-alive\r\n\r\n')
+    assert request.method == "GET"
+    assert "Host" in request.headers
+    assert request.headers["Host"] == "localhost:8080"
+    assert request.body == b""
+
+    assert len(request.cookies) == 3
+    assert request.cookies["cookie1"] == "value1"
+    assert request.cookies["cookie2"] == "value2"
+    assert request.cookies["cookie3"] == "value3"
+
+def test_post_w_body():
+    request = Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nCookie: #### WAS RIGHT HERE \r\n\r\nhello')
+    assert request.method == "POST"
+    assert "Content-Type" in request.headers
+    assert request.headers["Content-Type"] == "text/plain"
+    assert "Content-Length" in request.headers
+    assert request.headers["Content-Length"] == "5"
+    assert request.body == b"hello"
 
 if __name__ == '__main__':
-    test1()
+    #test1()
+    #test_w_cookies()
+    test_post_w_body()

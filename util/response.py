@@ -1,5 +1,4 @@
 import json
-from email import charset
 
 
 class Response:
@@ -8,14 +7,14 @@ class Response:
         self.status_message = "OK"
         self.body = b""
         self.header = {
-            "Content-Type": "text/plain, charset=utf-8",
+            "Content-Type": "text/plain; charset=utf-8",
             "Content-Length": "0"
         }
         self.cookie = {}
 
     def set_status(self, code, text):
         #no matter if it's a 300/400/500, just modify the status code and its text from the default
-        self.status_code = code
+        self.status_code = str(code)
         self.status_message = text
         return self
 
