@@ -8,7 +8,8 @@ class Response:
         self.body = b""
         self.header = {
             "Content-Type": "text/plain; charset=utf-8",
-            "Content-Length": "0"
+            "Content-Length": "0",
+            "X-Content-Type-Options": "nosniff"
         }
         self.cookie = {}
 
@@ -53,7 +54,7 @@ class Response:
         status_line = "HTTP/1.1" + " " + self.status_code + " " + self.status_message + "\r\n"
 
         # 2) for security use, add MIME nosniff
-        self.header["X-Content-Type-Options"] = "nosniff"
+        #set as default header
 
         # 3) Get the headers into 1 string
         header_str = ""
@@ -63,14 +64,13 @@ class Response:
         # 4) Get the cookies into 1 string
         cookie_str = ""
         for cookie_key, cookie_value in self.cookie.items():
-            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value + "\r\n"
-            cookie_str += "; Max-Age=" + "3600" + "\r\n"
-            cookie_str += "; Secure\r\n"
-            cookie_str += "; HttpOnly\r\n"
+            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value
+            cookie_str += "; Max-Age=3600; Secure; HttpOnly\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
-        response = (status_line + header_str + cookie_str + "\r\n").encode('utf-8') + self.body
+        response = status_line + header_str + cookie_str + "\r\n"
+        response = response.encode('utf-8') + self.body
         #conflict dealing
         return response
 
@@ -83,8 +83,9 @@ def test1():
 
 def test_w_multiple_cookies():
     res = Response()
-    dict = {"Set-Cookie": "cookie1=value1", "Set-Cookie": "cookie2=value2", "Set-Cookie": "cookie3=value3"}
-    res.cookies(dict)
+    list = [{"Set-Cookie": "cookie1=value1"}, {"Set-Cookie": "cookie2=value2"}, {"Set-Cookie": "cookie3=value3"}]
+    for i in list: #Multiple same Set-Cookie headers
+        res.cookies(i)
     expected = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 0\r\nSet-Cookie: cookie1=value1; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie2=value2; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie3=value3; Max-Age=3600; Secure; HttpOnly\r\n\r\n'
     actual = res.to_data()
 
