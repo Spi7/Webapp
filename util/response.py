@@ -26,10 +26,7 @@ class Response:
 
     def cookies(self, cookies):
         #store all the cookies Set-Cookies haven't set up yet at this stage
-        for curr_key, curr_value in cookies.items():
-            curr_value_split = curr_value.split("=")
-            cookie_key = curr_value_split[0]
-            cookie_value = curr_value_split[1]
+        for cookie_key, cookie_value in cookies.items():
             self.cookie[cookie_key] = cookie_value
         return self
 
@@ -83,12 +80,10 @@ def test1():
 
 def test_w_multiple_cookies():
     res = Response()
-    list = [{"Set-Cookie": "cookie1=value1"}, {"Set-Cookie": "cookie2=value2"}, {"Set-Cookie": "cookie3=value3"}]
-    for i in list: #Multiple same Set-Cookie headers
-        res.cookies(i)
+    dict = {"cookie1":"value1", "cookie2":"value2", "cookie3":"value3"}
+    res.cookies(dict)
     expected = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 0\r\nSet-Cookie: cookie1=value1; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie2=value2; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie3=value3; Max-Age=3600; Secure; HttpOnly\r\n\r\n'
     actual = res.to_data()
-
 
 if __name__ == '__main__':
     #test1()
