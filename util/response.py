@@ -46,7 +46,7 @@ class Response:
 
     def to_data(self):
         #Set cookie with expiration date? directives? check on that
-
+        self.header["Content-Length"] = str(len(self.body))
         # 1) first line of the response
         status_line = "HTTP/1.1" + " " + self.status_code + " " + self.status_message + "\r\n"
 
@@ -61,8 +61,7 @@ class Response:
         # 4) Get the cookies into 1 string
         cookie_str = ""
         for cookie_key, cookie_value in self.cookie.items():
-            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value
-            cookie_str += "; Max-Age=3600; Secure; HttpOnly\r\n"
+            cookie_str += "Set-Cookie: " + cookie_key + "=" + cookie_value + "\r\n"
 
         #either last header or last cookie will only have 1 \r\n, so we will manually
         #add another \r\n to distinguish body from others
