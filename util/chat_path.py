@@ -72,7 +72,8 @@ def get_message(request, handler):
             "id": message["id"],
             "author": message["author"],
             "content": message["content"],
-            "updated": message["updated"]
+            "updated": message["updated"],
+            "user_id": message["user_id"]
         }
         all_messages.append(curr_mes)
 
@@ -81,8 +82,47 @@ def get_message(request, handler):
 
 
 def update_message(request, handler):
-    pass
+    res = Response()
+
+    #get the curr id in order to grab the unique token
+    get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
+    user_token = request.cookies.get("session")
+    curr_user_id, curr_author = get_user(user_token)
+
+    #the current new modified body content
+    body = json.loads(request.body.decode("utf-8"))
+    body_content = html.escape(body["content"].strip())
+
+    #checking if it's the actual author editing its message
+    curr_message = chat_collection.find_one({"id": get_message_id})
+    curr_message_author = curr_message["author"]
+    curr_message_user_id = curr_message["user_id"]
+
+    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+        chat_collection.update_one({"id": get_message_id}, {"$set": {"content": body_content, "updated": True}})
+        res.text("message updated")
+    else:
+        res.set_status(403, "Forbidden")
+        res.text("Be nice, don't EDIT other user's messages")
+    handler.request.sendall(res.to_data())
 
 
 def delete_message(request, handler):
-    pass
+    res = Response()
+
+    get_message_id = request.path.rsplit("/", 1)[1]
+    user_token = request.cookies.get("session")
+    curr_user_id, curr_author = get_user(user_token)
+
+    #check if it's actual author deleting the message
+    curr_message = chat_collection.find_one({"id": get_message_id})
+    curr_message_author = curr_message["author"]
+    curr_message_user_id = curr_message["user_id"]
+
+    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+        chat_collection.delete_one({"id": get_message_id})
+        res.text("message deleted")
+    else:
+        res.set_status(403, "Forbidden")
+        res.text("Be nice, don't DELETE other user's messages")
+    handler.request.sendall(res.to_data())
