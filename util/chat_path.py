@@ -4,17 +4,22 @@ import uuid
 from util.response import Response
 from util.database import chat_collection, user_collection
 
-#future use when change implementation for router
-def select_function(request, handler):
-    request_method = request.method
-    if request_method == "POST":
-        create_message(request, handler)
-    elif request_method == "GET":
-        get_message(request, handler)
-    elif request_method == "PATCH":
-        update_message(request, handler)
-    elif request_method == "DELETE":
-        delete_message(request, handler)
+def select_chat_or_reaction(request, handler):
+    if request.path.startswith("/api/chats"):
+        if request.method == "PATCH":
+            update_message(request, handler)
+        elif request.method == "DELETE":
+            delete_message(request, handler)
+    elif request.path.startswith("/api/reaction"):
+        if request.method == "PATCH":
+            add_reaction(request, handler)
+        elif request.method == "DELETE":
+            delete_reaction(request, handler)
+    else:
+        res = Response()
+        res.set_status(404, "Not Found")
+        res.text("INVALID PATH: " + request.path)
+        handler.request.sendall(res.to_data())
 
 def create_user(token):
     user_id = str(uuid.uuid4())
@@ -73,7 +78,8 @@ def get_message(request, handler):
             "author": message["author"],
             "content": message["content"],
             "updated": message["updated"],
-            "user_id": message["user_id"]
+            "user_id": message["user_id"],
+            "reactions": message.get("reactions", {})
         }
         all_messages.append(curr_mes)
 
@@ -126,3 +132,51 @@ def delete_message(request, handler):
         res.set_status(403, "Forbidden")
         res.text("Be nice, don't DELETE other user's messages")
     handler.request.sendall(res.to_data())
+
+def add_reaction(request, handler):
+    res = Response()
+
+    #get the message_id to get the message in db | get the current user token so we can store who added this emoji in this message
+    get_message_id = request.path.rsplit("/", 1)[1]
+    curr_user = request.cookies.get("session")
+    curr_user_id, curr_author = get_user(curr_user)
+    curr_message = chat_collection.find_one({"id": get_message_id})
+
+    #get the emoji
+    body_content = json.loads(request.body.decode("utf-8"))
+    emoji = html.escape(body_content["emoji"].strip()) # this have the emoji
+
+    reactions = curr_message.get("reactions", {})
+
+    #check if this user already added this emoji before or not
+    if emoji not in reactions:
+        reactions[emoji] = []
+
+    #check if the user already add this emoji in this message
+    if curr_user_id in reactions[emoji]:
+        res.set_status(403, "Forbidden")
+        res.text("You already added this reaction")
+        handler.request.sendall(res.to_data())
+    else:
+        reactions[emoji].append(curr_user_id)
+        chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
+        res.text("Reaction added")
+        handler.request.sendall(res.to_data())
+
+
+def delete_reaction(request, handler):
+    pass
+
+
+
+#future use when change implementation for router
+# def select_function(request, handler):
+#     request_method = request.method
+#     if request_method == "POST":
+#         create_message(request, handler)
+#     elif request_method == "GET":
+#         get_message(request, handler)
+#     elif request_method == "PATCH":
+#         update_message(request, handler)
+#     elif request_method == "DELETE":
+#         delete_message(request, handler)
