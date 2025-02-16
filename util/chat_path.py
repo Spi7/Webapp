@@ -156,17 +156,38 @@ def add_reaction(request, handler):
     if curr_user_id in reactions[emoji]:
         res.set_status(403, "Forbidden")
         res.text("You already added this reaction")
-        handler.request.sendall(res.to_data())
     else:
         reactions[emoji].append(curr_user_id)
         chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
         res.text("Reaction added")
-        handler.request.sendall(res.to_data())
+    handler.request.sendall(res.to_data())
 
 
 def delete_reaction(request, handler):
-    pass
+    res = Response()
 
+    get_message_id = request.path.rsplit("/", 1)[1]
+    curr_user = request.cookies.get("session")
+    curr_user_id, curr_author = get_user(curr_user)
+    curr_message = chat_collection.find_one({"id": get_message_id})
+
+    body_content = json.loads(request.body.decode("utf-8"))
+    emoji = html.escape(body_content["emoji"].strip())
+
+    #check if the user ever applied that emoji in the curr message, if yes remove it
+    reactions = curr_message.get("reactions", {})
+    if curr_user_id in reactions[emoji]:
+        reactions[emoji].remove(curr_user_id)
+        if len(reactions[emoji]) == 0:
+            #remove the key for this emoji if there isn't any users
+            reactions.pop(emoji, None)
+            chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
+        chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
+        res.text("Reaction deleted")
+    else:
+        res.set_status(403, "Forbidden")
+        res.text("The emoji was either never added by YOU or YOU already removed it!")
+    handler.request.sendall(res.to_data())
 
 
 #future use when change implementation for router
