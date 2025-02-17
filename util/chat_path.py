@@ -15,6 +15,8 @@ def select_chat_or_reaction(request, handler):
             add_reaction(request, handler)
         elif request.method == "DELETE":
             delete_reaction(request, handler)
+    elif request.path.startswith("/api/nickname"):
+            change_nickname(request, handler)
     else:
         res = Response()
         res.set_status(404, "Not Found")
@@ -28,7 +30,8 @@ def create_user(token):
     user_collection.insert_one({
         "session": token,
         "user_id": user_id,
-        "author": author
+        "author": author,
+        "nickname": ""
     })
 
 def get_user(token):
@@ -36,7 +39,7 @@ def get_user(token):
     if user_data is None:
         create_user(token)
         user_data = user_collection.find_one({"session": token})
-    return user_data["user_id"], user_data["author"]
+    return user_data["user_id"], user_data["author"], user_data["nickname"]
 
 #Create Message
 def create_message(request, handler):
@@ -51,7 +54,7 @@ def create_message(request, handler):
         user_token = str(uuid.uuid4())
         create_user(user_token)
 
-    user_id, author = get_user(user_token)
+    user_id, author, nickname = get_user(user_token)
     message_id = str(uuid.uuid4())
 
     chat_collection.insert_one({
@@ -59,6 +62,7 @@ def create_message(request, handler):
         "user_id": user_id,
         "author": author,
         "content": body_content,
+        "nickname": nickname,
         "updated": False
     })
 
@@ -79,7 +83,8 @@ def get_message(request, handler):
             "content": message["content"],
             "updated": message["updated"],
             "user_id": message["user_id"],
-            "reactions": message.get("reactions", {})
+            "reactions": message.get("reactions", {}),
+            "nickname": message.get("nickname", "") # front end js: message.nickname ? message.nickname : message.author
         }
         all_messages.append(curr_mes)
 
@@ -93,7 +98,7 @@ def update_message(request, handler):
     #get the curr id in order to grab the unique token
     get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
     user_token = request.cookies.get("session")
-    curr_user_id, curr_author = get_user(user_token)
+    curr_user_id, curr_author, nickname = get_user(user_token)
 
     #the current new modified body content
     body = json.loads(request.body.decode("utf-8"))
@@ -118,7 +123,7 @@ def delete_message(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
     user_token = request.cookies.get("session")
-    curr_user_id, curr_author = get_user(user_token)
+    curr_user_id, curr_author, nickname = get_user(user_token)
 
     #check if it's actual author deleting the message
     curr_message = chat_collection.find_one({"id": get_message_id})
@@ -133,13 +138,14 @@ def delete_message(request, handler):
         res.text("Be nice, don't DELETE other user's messages")
     handler.request.sendall(res.to_data())
 
+#AO1 -------------------------------------------------------------------------
 def add_reaction(request, handler):
     res = Response()
 
     #get the message_id to get the message in db | get the current user token so we can store who added this emoji in this message
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
-    curr_user_id, curr_author = get_user(curr_user)
+    curr_user_id, curr_author, curr_user_nickname = get_user(curr_user)
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     #get the emoji
@@ -168,7 +174,7 @@ def delete_reaction(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
-    curr_user_id, curr_author = get_user(curr_user)
+    curr_user_id, curr_author, curr_user_nickname = get_user(curr_user)
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     body_content = json.loads(request.body.decode("utf-8"))
@@ -181,7 +187,6 @@ def delete_reaction(request, handler):
         if len(reactions[emoji]) == 0:
             #remove the key for this emoji if there isn't any users
             reactions.pop(emoji, None)
-            chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
         chat_collection.update_one({"id": get_message_id}, {"$set": {"reactions": reactions}})
         res.text("Reaction deleted")
     else:
@@ -189,6 +194,26 @@ def delete_reaction(request, handler):
         res.text("The emoji was either never added by YOU or YOU already removed it!")
     handler.request.sendall(res.to_data())
 
+#AO2 -------------------------------------------------------------------------
+def change_nickname(request, handler):
+    res = Response()
+
+    #get the current user
+    user_token = request.cookies.get("session")
+    curr_user_id, curr_author, curr_user_nickname = get_user(user_token)
+
+    #get the request content (new username)
+    body_content = json.loads(request.body.decode("utf-8"))
+    new_username = html.escape(body_content["nickname"].strip())
+
+    #go into user collection and set a new field: nickname
+    user_collection.update_one({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
+
+    #update all messages with the session token to this new name
+    chat_collection.update_many({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
+
+    res.text("Nickname changed")
+    handler.request.sendall(res.to_data())
 
 #future use when change implementation for router
 # def select_function(request, handler):
