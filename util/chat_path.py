@@ -26,13 +26,13 @@ def select_chat_or_reaction(request, handler):
         handler.request.sendall(res.to_data())
 
 #AO3 generate profile-pics
-def generate_profile_pic(user_id):
-    api_url = "https://api.dicebear.com/9.x/pixel-art/svg?seed=" + user_id
+def generate_profile_pic(token):
+    api_url = "https://api.dicebear.com/9.x/pixel-art/svg?seed=" + token
     api_response = requests.get(api_url)
 
     if api_response.status_code == 200:
         os.makedirs("public/imgs/profile-pics", exist_ok=True)
-        profile_path = "public/imgs/profile-pics/" + user_id + ".svg"
+        profile_path = "public/imgs/profile-pics/" + token + ".svg"
         with open (profile_path, "wb") as profile_pic:
             profile_pic.write(api_response.content)
         return "/" + profile_path
@@ -43,7 +43,7 @@ def create_user(token):
     user_id = str(uuid.uuid4())
     author = "Guest-" + uuid.uuid4().hex[:3]
 
-    img_url = generate_profile_pic(user_id)
+    img_url = generate_profile_pic(token)
     user_collection.insert_one({
         "session": token,
         "user_id": user_id,
@@ -81,7 +81,7 @@ def create_message(request, handler):
         "author": user_data["author"],
         "content": body_content,
         "nickname": user_data["nickname"],
-        "imageURL": user_data["imageURL"],
+        "imageURL": user_data.get("imageURL", ""),
         "updated": False
     })
 
@@ -104,7 +104,7 @@ def get_message(request, handler):
             "user_id": message["user_id"],
             "reactions": message.get("reactions", {}),
             "nickname": message.get("nickname", ""), # front end js: message.nickname ? message.nickname : message.author
-            "imageURL": message["imageURL"]
+            "imageURL": message.get("imageURL", "")
         }
         all_messages.append(curr_mes)
 
