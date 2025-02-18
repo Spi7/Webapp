@@ -84,8 +84,7 @@ def test_w_multiple_cookies():
     res.bytes(b'hello')
     expected = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 5\r\nX-Content-Type-Options: nosniff\r\nSet-Cookie: cookie1=value1; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie2=value2; Max-Age=3600; Secure; HttpOnly\r\nSet-Cookie: cookie3=value3; Max-Age=3600; Secure; HttpOnly\r\n\r\nhello'
     actual = res.to_data()
-    print(actual)
 
 if __name__ == '__main__':
-    #test1()
-    test_w_multiple_cookies()
+    test1()
+    #test_w_multiple_cookies()
