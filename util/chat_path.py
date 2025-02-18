@@ -94,7 +94,6 @@ def get_message(request, handler):
 
     all_messages = []
     for message in message_data:
-
         curr_mes = {
             "id": message["id"],
             "author": message["author"],
@@ -103,9 +102,8 @@ def get_message(request, handler):
             "user_id": message["user_id"],
             "reactions": message.get("reactions", {}),
             "nickname": message.get("nickname", ""), # front end js: message.nickname ? message.nickname : message.author
+            "imageURL": message["imageURL"]
         }
-        if "imageURL" in message and message["imageURL"]:
-            curr_mes["imageURL"] = "/" + message["imageURL"]
         all_messages.append(curr_mes)
 
     res.json({"messages": all_messages})
