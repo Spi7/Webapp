@@ -46,7 +46,7 @@ def create_user(token):
     img_url = generate_profile_pic(token)
     user_collection.insert_one({
         "session": token,
-        "user_id": user_id,
+        #"user_id": user_id,
         "author": author,
         "nickname": "",
         "imageURL": img_url
@@ -77,7 +77,8 @@ def create_message(request, handler):
 
     chat_collection.insert_one({
         "id": message_id,
-        "user_id": user_data["user_id"],
+        "session": user_token,
+        #"user_id": user_data["user_id"],
         "author": user_data["author"],
         "content": body_content,
         "nickname": user_data["nickname"],
@@ -101,7 +102,8 @@ def get_message(request, handler):
             "author": message["author"],
             "content": message["content"],
             "updated": message["updated"],
-            "user_id": message["user_id"],
+            "session": message["session"],
+            #"user_id": message["user_id"],
             "reactions": message.get("reactions", {}),
             "nickname": message.get("nickname", ""), # front end js: message.nickname ? message.nickname : message.author
             "imageURL": message.get("imageURL", "")
@@ -119,7 +121,7 @@ def update_message(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
     user_token = request.cookies.get("session")
     user_data = get_user(user_token)
-    curr_user_id = user_data["user_id"]
+    curr_user_id = user_data["session"]
     curr_author = user_data["author"]
 
     #the current new modified body content
@@ -129,7 +131,7 @@ def update_message(request, handler):
     #checking if it's the actual author editing its message
     curr_message = chat_collection.find_one({"id": get_message_id})
     curr_message_author = curr_message["author"]
-    curr_message_user_id = curr_message["user_id"]
+    curr_message_user_id = curr_message["session"]
 
     if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
         chat_collection.update_one({"id": get_message_id}, {"$set": {"content": body_content, "updated": True}})
@@ -146,13 +148,13 @@ def delete_message(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1]
     user_token = request.cookies.get("session")
     user_data = get_user(user_token)
-    curr_user_id = user_data["user_id"]
+    curr_user_id = user_data["session"]
     curr_author = user_data["author"]
 
     #check if it's actual author deleting the message
     curr_message = chat_collection.find_one({"id": get_message_id})
     curr_message_author = curr_message["author"]
-    curr_message_user_id = curr_message["user_id"]
+    curr_message_user_id = curr_message["session"]
 
     if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
         chat_collection.delete_one({"id": get_message_id})
@@ -170,7 +172,7 @@ def add_reaction(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
     user_data = get_user(curr_user)
-    curr_user_id = user_data["user_id"]
+    curr_user_id = user_data["session"]
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     #get the emoji
@@ -200,7 +202,7 @@ def delete_reaction(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
     user_data = get_user(curr_user)
-    curr_user_id = user_data["user_id"]
+    curr_user_id = user_data["session"]
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     body_content = json.loads(request.body.decode("utf-8"))
@@ -227,17 +229,17 @@ def change_nickname(request, handler):
     #get the current user
     user_token = request.cookies.get("session")
     user_data = get_user(user_token)
-    curr_user_id = user_data["user_id"]
+    curr_user_id = user_data["session"]
 
     #get the request content (new username)
     body_content = json.loads(request.body.decode("utf-8"))
     new_username = html.escape(body_content["nickname"].strip())
 
     #go into user collection and set a new field: nickname
-    user_collection.update_one({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
+    user_collection.update_one({"session": curr_user_id}, {"$set": {"nickname": new_username}})
 
     #update all messages with the session token to this new name
-    chat_collection.update_many({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
+    chat_collection.update_many({"session": curr_user_id}, {"$set": {"nickname": new_username}})
 
     res.text("Nickname changed")
     handler.request.sendall(res.to_data())
