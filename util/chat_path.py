@@ -40,7 +40,7 @@ def generate_profile_pic(token):
         return "" #default back to broken image if api dicebear didn't work out
 
 def create_user(token):
-    user_id = str(uuid.uuid4())
+    #user_id = str(uuid.uuid4())
     author = "Guest-" + uuid.uuid4().hex[:3]
 
     img_url = generate_profile_pic(token)
@@ -71,6 +71,7 @@ def create_message(request, handler):
     if not user_token:
         user_token = str(uuid.uuid4())
         create_user(user_token)
+        res.cookies({"session": user_token})
 
     user_data = get_user(user_token)
     message_id = str(uuid.uuid4())
@@ -86,7 +87,7 @@ def create_message(request, handler):
         "updated": False
     })
 
-    res.cookies({"session": user_token})
+    # res.cookies({"session": user_token})
     res.text("message sent")
     handler.request.sendall(res.to_data())
 
@@ -121,8 +122,7 @@ def update_message(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
     user_token = request.cookies.get("session")
     user_data = get_user(user_token)
-    curr_user_id = user_data["session"]
-    curr_author = user_data["author"]
+    curr_session_token = user_data["session"]
 
     #the current new modified body content
     body = json.loads(request.body.decode("utf-8"))
@@ -130,10 +130,9 @@ def update_message(request, handler):
 
     #checking if it's the actual author editing its message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_author = curr_message["author"]
-    curr_message_user_id = curr_message["session"]
+    curr_message_session = curr_message["session"]
 
-    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+    if curr_session_token == curr_message_session:
         chat_collection.update_one({"id": get_message_id}, {"$set": {"content": body_content, "updated": True}})
         res.text("message updated")
     else:
@@ -148,15 +147,14 @@ def delete_message(request, handler):
     get_message_id = request.path.rsplit("/", 1)[1]
     user_token = request.cookies.get("session")
     user_data = get_user(user_token)
-    curr_user_id = user_data["session"]
+    curr_session_token = user_data["session"]
     curr_author = user_data["author"]
 
     #check if it's actual author deleting the message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_author = curr_message["author"]
-    curr_message_user_id = curr_message["session"]
+    curr_message_session = curr_message["session"]
 
-    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+    if curr_message_session == curr_session_token:
         chat_collection.delete_one({"id": get_message_id})
         res.text("message deleted")
     else:
