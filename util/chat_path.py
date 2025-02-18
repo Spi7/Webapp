@@ -1,8 +1,8 @@
 import html
 import json
 import uuid
-import os
 import requests
+import os
 from util.response import Response
 from util.database import chat_collection, user_collection
 
@@ -25,7 +25,6 @@ def select_chat_or_reaction(request, handler):
         res.text("INVALID PATH: " + request.path)
         handler.request.sendall(res.to_data())
 
-#AO3 generate profile-pics
 def generate_profile_pic(token):
     api_url = "https://api.dicebear.com/9.x/pixel-art/svg?seed=" + token
     api_response = requests.get(api_url)
@@ -33,20 +32,21 @@ def generate_profile_pic(token):
     if api_response.status_code == 200:
         os.makedirs("public/imgs/profile-pics", exist_ok=True)
         profile_path = "public/imgs/profile-pics/" + token + ".svg"
-        with open (profile_path, "wb") as profile_pic:
-            profile_pic.write(api_response.content)
+        with open(profile_path, "wb") as f:
+            f.write(api_response.content)
         return "/" + profile_path
     else:
-        return "" #default back to broken image if api dicebear didn't work out
+        return ""
 
 def create_user(token):
-    #user_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())
     author = "Guest-" + uuid.uuid4().hex[:3]
 
     img_url = generate_profile_pic(token)
+
     user_collection.insert_one({
         "session": token,
-        #"user_id": user_id,
+        "user_id": user_id,
         "author": author,
         "nickname": "",
         "imageURL": img_url
@@ -57,7 +57,7 @@ def get_user(token):
     if user_data is None:
         create_user(token)
         user_data = user_collection.find_one({"session": token})
-    return user_data
+    return user_data["user_id"], user_data["author"], user_data["nickname"], user_data["imageURL"]
 
 #Create Message
 def create_message(request, handler):
@@ -71,23 +71,21 @@ def create_message(request, handler):
     if not user_token:
         user_token = str(uuid.uuid4())
         create_user(user_token)
-        res.cookies({"session": user_token})
 
-    user_data = get_user(user_token)
+    user_id, author, nickname, image_url = get_user(user_token)
     message_id = str(uuid.uuid4())
 
     chat_collection.insert_one({
         "id": message_id,
-        "session": user_token,
-        #"user_id": user_data["user_id"],
-        "author": user_data["author"],
+        "user_id": user_id,
+        "author": author,
         "content": body_content,
-        "nickname": user_data["nickname"],
-        "imageURL": user_data.get("imageURL", ""),
-        "updated": False
+        "nickname": nickname,
+        "updated": False,
+        "imageURL": image_url
     })
 
-    # res.cookies({"session": user_token})
+    res.cookies({"session": user_token})
     res.text("message sent")
     handler.request.sendall(res.to_data())
 
@@ -103,11 +101,10 @@ def get_message(request, handler):
             "author": message["author"],
             "content": message["content"],
             "updated": message["updated"],
-            "session": message["session"],
-            #"user_id": message["user_id"],
+            "user_id": message["user_id"],
             "reactions": message.get("reactions", {}),
             "nickname": message.get("nickname", ""), # front end js: message.nickname ? message.nickname : message.author
-            "imageURL": message.get("imageURL", "")
+            "imageURL": message["imageURL"]
         }
         all_messages.append(curr_mes)
 
@@ -121,8 +118,7 @@ def update_message(request, handler):
     #get the curr id in order to grab the unique token
     get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
     user_token = request.cookies.get("session")
-    user_data = get_user(user_token)
-    curr_session_token = user_data["session"]
+    curr_user_id, curr_author, nickname, image_url = get_user(user_token)
 
     #the current new modified body content
     body = json.loads(request.body.decode("utf-8"))
@@ -130,9 +126,10 @@ def update_message(request, handler):
 
     #checking if it's the actual author editing its message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_session = curr_message["session"]
+    curr_message_author = curr_message["author"]
+    curr_message_user_id = curr_message["user_id"]
 
-    if curr_session_token == curr_message_session:
+    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
         chat_collection.update_one({"id": get_message_id}, {"$set": {"content": body_content, "updated": True}})
         res.text("message updated")
     else:
@@ -146,15 +143,14 @@ def delete_message(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
     user_token = request.cookies.get("session")
-    user_data = get_user(user_token)
-    curr_session_token = user_data["session"]
-    curr_author = user_data["author"]
+    curr_user_id, curr_author, nickname, image_url = get_user(user_token)
 
     #check if it's actual author deleting the message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_session = curr_message["session"]
+    curr_message_author = curr_message["author"]
+    curr_message_user_id = curr_message["user_id"]
 
-    if curr_message_session == curr_session_token:
+    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
         chat_collection.delete_one({"id": get_message_id})
         res.text("message deleted")
     else:
@@ -169,8 +165,7 @@ def add_reaction(request, handler):
     #get the message_id to get the message in db | get the current user token so we can store who added this emoji in this message
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
-    user_data = get_user(curr_user)
-    curr_user_id = user_data["session"]
+    curr_user_id, curr_author, curr_user_nickname, image_url = get_user(curr_user)
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     #get the emoji
@@ -199,8 +194,7 @@ def delete_reaction(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
     curr_user = request.cookies.get("session")
-    user_data = get_user(curr_user)
-    curr_user_id = user_data["session"]
+    curr_user_id, curr_author, curr_user_nickname, img_url = get_user(curr_user)
     curr_message = chat_collection.find_one({"id": get_message_id})
 
     body_content = json.loads(request.body.decode("utf-8"))
@@ -226,18 +220,17 @@ def change_nickname(request, handler):
 
     #get the current user
     user_token = request.cookies.get("session")
-    user_data = get_user(user_token)
-    curr_user_id = user_data["session"]
+    curr_user_id, curr_author, curr_user_nickname, img_url = get_user(user_token)
 
     #get the request content (new username)
     body_content = json.loads(request.body.decode("utf-8"))
     new_username = html.escape(body_content["nickname"].strip())
 
     #go into user collection and set a new field: nickname
-    user_collection.update_one({"session": curr_user_id}, {"$set": {"nickname": new_username}})
+    user_collection.update_one({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
 
     #update all messages with the session token to this new name
-    chat_collection.update_many({"session": curr_user_id}, {"$set": {"nickname": new_username}})
+    chat_collection.update_many({"user_id": curr_user_id}, {"$set": {"nickname": new_username}})
 
     res.text("Nickname changed")
     handler.request.sendall(res.to_data())
