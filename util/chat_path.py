@@ -1,6 +1,7 @@
 import html
 import json
 import uuid
+import os
 import requests
 from util.response import Response
 from util.database import chat_collection, user_collection
@@ -30,6 +31,7 @@ def generate_profile_pic(user_id):
     api_response = requests.get(api_url)
 
     if api_response.status_code == 200:
+        os.makedirs("public/imgs/profile-pics", exist_ok=True)
         profile_path = "public/imgs/profile-pics/" + user_id + ".svg"
         with open (profile_path, "wb") as profile_pic:
             profile_pic.write(api_response.content)
