@@ -27,6 +27,14 @@ def public_path(request, handler):
         file_path = "public/index.html"
     elif request.path == "/chat":
         file_path = "public/chat.html"
+    elif request.path == "/register":
+        file_path = "public/register.html"
+    elif request.path == "/login":
+        file_path = "public/login.html"
+    elif request.path == "/search-users":
+        file_path = "public/search-users.html"
+    elif request.path == "/settings":
+        file_path = "public/settings.html"
     else:
         file_path = request.path.split("/public", 1)[1]
         file_path = "public" + file_path

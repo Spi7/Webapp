@@ -39,9 +39,10 @@ async function handleSubmit(event) {
 
   const formData = new URLSearchParams();
   formData.append("username", username);
-  if (password) {
-    formData.append("password", password);
-  }
+  // if (password) {
+  //   formData.append("password", password);
+  // }
+  formData.append("password", password);
   if (totpSecret) {
     formData.append("totpSecret", totpSecret);
   }
