@@ -50,7 +50,7 @@ def login(request, handler):
 
     #Set auth token with a valid time for 1 day --> how to check if its invalid?
     #The cookie we send back will be auth_token, despite in db "session" --> can either be session token or auth token
-    res.cookies({"auth_token": auth_token + "; Max-Age=86400; Secure; HttpOnly"})
+    res.cookies({"auth_token": auth_token + "; Max-Age=86400; HttpOnly"})
     res.text("Logged in successfully!")
     handler.request.sendall(res.to_data())
 
@@ -68,7 +68,7 @@ def registration(request, handler):
 
     #print(f"Session token received: {session_token}")
 
-    username_exist = user_collection.find_one({"username": username})
+    username_exist = user_collection.find_one({"author": username})
     if username_exist:
         res.set_status(400, "Bad Request")
         res.text("This username had been taken. Please try again.")
@@ -95,7 +95,7 @@ def registration(request, handler):
         #if the user send multiple message before registration, the registration will update all the guest message to this user.
 
         #Set cookies, need to set the authentication cookie with directives : Max-Age
-        #res.cookies({"session": auth_token + "; Max-Age=2592000; Secure; HttpOnly"}) --> send when login
+        #res.cookies({"session": auth_token + "; Max-Age=2592000; HttpOnly"}) --> send when login
 
         res.set_status(200, "OK")
         res.text("Account Created")
@@ -124,6 +124,3 @@ def logout(request, handler):
     res.header["Location"] = "/"
     handler.request.sendall(res.to_data())
 
-
-#QUESTION: If im an evil user, I login and i deleted my auth_token, and i send a message, what should i do?
-#IN demo --> Im still logged in but ill be treat as guest + im actually being a guest, just that its showing "im still logged in"
