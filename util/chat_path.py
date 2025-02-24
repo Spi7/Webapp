@@ -45,8 +45,8 @@ def get_or_create_session(request, response):
     if not user_token:
         user_token = str(uuid.uuid4())
         create_user(user_token)
-        #response.cookies({"session": user_token + "; Secure; HttpOnly; SameSite = None"})
-        response.cookies({"session": user_token + "; Path=/; Secure; HttpOnly;"})
+        #response.cookies({"session": user_token + "; HttpOnly; SameSite = None"})
+        response.cookies({"session": user_token + "; Path=/; HttpOnly;"})
     return user_token
 
 def create_user(token):
@@ -99,9 +99,9 @@ def create_message(request, handler):
         "updated": False
     })
 
-    #res.cookies({"session": user_token + "; Secure; HttpOnly; SameSite = None"})
+    #res.cookies({"session": user_token + "; HttpOnly; SameSite = None"})
     if not auth_token:
-        res.cookies({"session": user_token + "; Path=/; Secure; HttpOnly;"})
+        res.cookies({"session": user_token + "; Path=/; HttpOnly;"})
     res.text("message sent")
     handler.request.sendall(res.to_data())
 
