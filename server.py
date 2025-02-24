@@ -3,7 +3,6 @@ from util.request import Request
 from util.router import Router
 from util.hello_path import hello_path
 from util.public_path import public_path
-#from util.chat_path import select_function
 from util.chat_path import get_message, create_message, select_chat_or_reaction
 from util.auth_path import registration, login, logout
 
