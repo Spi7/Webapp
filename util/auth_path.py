@@ -7,7 +7,7 @@ from requests import session
 from util.response import Response
 from util.auth import extract_credentials, validate_password
 from util.database import user_collection, chat_collection
-from util.chat_path import generate_profile_pic
+#from util.chat_path import generate_profile_pic
 
 def login(request, handler):
     res = Response()
@@ -34,7 +34,7 @@ def login(request, handler):
     #It's the correct user!
     user_data = user_collection.find_one({'author': username})
     user_id = user_data["user_id"] #should have, if not error
-    user_img_url = user_data["imageURL"]
+    #user_img_url = user_data["imageURL"]
 
     auth_token = str(uuid.uuid4())
     user_collection.update_one({"user_id": user_id}, {"$set": {"session": auth_token}})
@@ -43,7 +43,9 @@ def login(request, handler):
         user_guest = user_collection.find_one({"session": session_token})
         user_guest_user_id = user_guest.get("user_id")
         chat_collection.update_many({"user_id": user_guest_user_id}, {
-            "$set": {"user_id": user_id, "author": username, "nickname": username, "imageURL": user_img_url}})
+            "$set": {"user_id": user_id, "author": username, "nickname": username}})
+        # chat_collection.update_many({"user_id": user_guest_user_id}, {
+        #     "$set": {"user_id": user_id, "author": username, "nickname": username, "imageURL": user_img_url}})
         user_collection.delete_one({"user_id": user_guest_user_id})
         # Delete the session cookie
         res.cookies({"session": session_token + "; Max-Age=0"})
@@ -81,7 +83,7 @@ def registration(request, handler):
         user_id = str(uuid.uuid4())
         auth_token = str(uuid.uuid4())
         hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
-        img_url = generate_profile_pic(auth_token)
+        #img_url = generate_profile_pic(auth_token)
 
         user_collection.insert_one({
             "user_id": user_id,
@@ -89,7 +91,7 @@ def registration(request, handler):
             "password": hashed_pass,
             "session": hashed_auth_token, #we will still stored auth_token in "session"
             "nickname": username,
-            "imageURL": img_url
+            #"imageURL": img_url
         })
 
         #if the user send multiple message before registration, the registration will update all the guest message to this user.
