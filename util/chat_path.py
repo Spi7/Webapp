@@ -76,12 +76,16 @@ def create_message(request, handler):
     body = json.loads(request.body.decode("utf-8")) #later store as string into db
     body_content = html.escape(body["content"].strip())
 
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
 
+    #if neither token exist then we give a new token
     if not user_token:
         user_token = str(uuid.uuid4())
         create_user(user_token)
 
+    #if there's an auth_token, we will auth, else session
     user_data = get_user(user_token)
     message_id = str(uuid.uuid4())
 
@@ -96,7 +100,8 @@ def create_message(request, handler):
     })
 
     #res.cookies({"session": user_token + "; Secure; HttpOnly; SameSite = None"})
-    res.cookies({"session": user_token + "; Path=/; Secure; HttpOnly;"})
+    if not auth_token:
+        res.cookies({"session": user_token + "; Path=/; Secure; HttpOnly;"})
     res.text("message sent")
     handler.request.sendall(res.to_data())
 
@@ -129,7 +134,9 @@ def update_message(request, handler):
     #get the curr id in order to grab the unique token
     get_message_id = request.path.rsplit("/", 1)[1] #check correct message_id
 
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
     if not user_token:
         user_token = get_or_create_session(request, res)
 
@@ -160,7 +167,9 @@ def delete_message(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
 
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
     if not user_token:
         user_token = get_or_create_session(request, res)
 
@@ -188,7 +197,9 @@ def add_reaction(request, handler):
     #get the message_id to get the message in db | get the current user token so we can store who added this emoji in this message
     get_message_id = request.path.rsplit("/", 1)[1]
 
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
     if not user_token:
         user_token = get_or_create_session(request, res)
 
@@ -222,7 +233,9 @@ def delete_reaction(request, handler):
 
     get_message_id = request.path.rsplit("/", 1)[1]
 
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
     if not user_token:
         user_token = get_or_create_session(request, res)
 
@@ -252,7 +265,9 @@ def change_nickname(request, handler):
     res = Response()
 
     #get the current user
-    user_token = request.cookies.get("session")
+    session_token = request.cookies.get("session")
+    auth_token = request.cookies.get("auth_token")
+    user_token = auth_token if auth_token else session_token
     if not user_token:
         user_token = get_or_create_session(request, res)
     user_data = get_user(user_token)
