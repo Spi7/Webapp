@@ -37,7 +37,8 @@ def login(request, handler):
     user_img_url = user_data["imageURL"]
 
     auth_token = str(uuid.uuid4())
-    user_collection.update_one({"user_id": user_id}, {"$set": {"session": auth_token}})
+    hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
+    user_collection.update_one({"user_id": user_id}, {"$set": {"session": hashed_auth_token}})
 
     if session_token:
         user_guest = user_collection.find_one({"session": session_token})
@@ -56,10 +57,6 @@ def login(request, handler):
 
 #session token never passed in, it only pass to /api
 def registration(request, handler):
-    # print("R1quest:")
-    # headers = request.headers
-    # for header in headers:
-    #     print(header)
     res = Response()
     credentials = extract_credentials(request)
     username = credentials[0]
@@ -110,16 +107,18 @@ def registration(request, handler):
 def logout(request, handler):
     res = Response()
     auth_token = request.cookies.get("auth_token")
-    if not auth_token:
-        res.set_status(400, "Bad Request")
-        res.text("Missing Authentication Token!!! DID YOU FOOL AROUND W UR OWN TOKEN?!")
-        handler.request.sendall(res.to_data())
-        return
-    user_data = user_collection.find_one({"session": auth_token})
-    user_id = user_data["user_id"]
-    user_collection.update_one({"user_id": user_id}, {"$unset": {"session": ""}})
+    if auth_token:
+        hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
+        user_data = user_collection.find_one({"session": hashed_auth_token})
+        user_id = user_data["user_id"]
+        user_collection.update_one({"user_id": user_id}, {"$unset": {"session": ""}})
 
-    res.set_status(302, "Found")
-    res.cookies({"auth_token": auth_token + "; Max-Age=0"})
-    res.header["Location"] = "/"
+        res.set_status(302, "Found")
+        res.cookies({"auth_token": auth_token + "; Max-Age=0"})
+        res.header["Location"] = "/"
+    else:
+        res.set_status(400, "Bad Request")
+        res.headers({"Content-Length": "0"})
+        res.text("Missing Authentication Token!!! DID YOU FOOL AROUND W UR OWN TOKEN?!")
     handler.request.sendall(res.to_data())
+

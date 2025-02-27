@@ -10,7 +10,8 @@ mime_types = {
     ".json" : "application/json",
     ".ico": "image/x-icon",
     ".gif": "image/gif",
-    ".svg": "image/svg+xml"
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp"
 }
 
 def get_file_extension(file_name):

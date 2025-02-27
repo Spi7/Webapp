@@ -5,6 +5,7 @@ from util.hello_path import hello_path
 from util.public_path import public_path
 from util.chat_path import get_message, create_message, select_chat_or_reaction
 from util.auth_path import registration, login, logout
+from util.api_user_path import select_method
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -31,6 +32,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("POST", "/register", registration, False)
         self.router.add_route("POST", "/login", login, False)
         self.router.add_route("GET", "/logout", logout, True)
+        #HW2, api/users
+        self.router.add_route("GET", "/api/users", select_method, False)
+        self.router.add_route("POST", "/api/users", select_method, False)
         super().__init__(request, client_address, server)
 
     def handle(self):
