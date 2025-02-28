@@ -1,6 +1,8 @@
 from util.response import Response
 from util.database import user_collection
+from util.auth import extract_credentials, validate_password
 import hashlib
+import bcrypt
 
 def select_method(request, handler):
     if request.method == 'GET':
@@ -48,4 +50,37 @@ def search_user(request, handler):
 
 def update_profile(request, handler):
     res = Response()
-    pass
+    auth_token = request.cookies.get('auth_token')
+    if auth_token:
+        hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest() #check in db
+        new_credentials = extract_credentials(request) #[0] --> username, [1] --> password
+        new_username = new_credentials[0]
+        new_password = new_credentials[1]
+        curr_user_data = user_collection.find_one({'session': hashed_auth_token})
+
+        if new_username:
+            username_exist = user_collection.find_one({"author": new_username})
+            if username_exist:
+                # check if new_username had been taken or not
+                res.set_status(400, "Bad Request")
+                res.text("The new username you want had already been taken.")
+                handler.request.sendall(res.to_data())
+                return
+            else:
+                user_collection.update_one({"user_id": curr_user_data["user_id"]}, {"$set": {"nickname": new_username, "author": new_username, "username": new_username}})
+
+        if new_password:
+            if validate_password(new_password):
+                # new password follows the requirement
+                salt = bcrypt.gensalt()
+                hashed_new_password = bcrypt.hashpw(new_password.encode("utf-8"), salt).decode('utf-8')
+                user_collection.update_one({"user_id": curr_user_data["user_id"]}, {"$set": {"password": hashed_new_password}})
+            else:
+                res.set_status(400, "Bad Request")
+                res.text("Your new password is not strong enough.")
+                handler.request.sendall(res.to_data())
+                return
+    else:
+        res.set_status(401, "Unauthorized")
+        res.text("No authentication token")
+    handler.request.sendall(res.to_data())
