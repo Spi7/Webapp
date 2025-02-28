@@ -107,18 +107,15 @@ def registration(request, handler):
 def logout(request, handler):
     res = Response()
     auth_token = request.cookies.get("auth_token")
+
     if auth_token:
         hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
         user_data = user_collection.find_one({"session": hashed_auth_token})
-        user_id = user_data["user_id"]
-        user_collection.update_one({"user_id": user_id}, {"$unset": {"session": ""}})
-
-        res.set_status(302, "Found")
-        res.cookies({"auth_token": auth_token + "; Max-Age=0"})
-        res.header["Location"] = "/"
-    else:
-        res.set_status(400, "Bad Request")
-        res.headers({"Content-Length": "0"})
-        res.text("Missing Authentication Token!!! DID YOU FOOL AROUND W UR OWN TOKEN?!")
+        if user_data:
+            user_collection.update_one({"user_id": user_data["user_id"]}, {"$set": {"session": ""}})
+            
+    res.set_status(302, "Found")
+    res.cookies({"auth_token": "dummy; Max-Age=0; HttpOnly"})
+    res.header["Location"] = "/"
+    res.header["Content-Length"] = "0"    #for firefox
     handler.request.sendall(res.to_data())
-

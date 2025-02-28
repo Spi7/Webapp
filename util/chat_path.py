@@ -149,7 +149,6 @@ def update_message(request, handler):
 
     user_data = get_user(user_token)
     curr_user_id = user_data["user_id"]
-    curr_author = user_data["author"]
 
     #the current new modified body content
     body = json.loads(request.body.decode("utf-8"))
@@ -157,10 +156,9 @@ def update_message(request, handler):
 
     #checking if it's the actual author editing its message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_author = curr_message["author"]
     curr_message_user_id = curr_message["user_id"]
 
-    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+    if curr_user_id == curr_message_user_id: #we dont need to match curr_author, user_id is unique enough
         chat_collection.update_one({"id": get_message_id}, {"$set": {"content": body_content, "updated": True}})
         res.text("message updated")
     else:
@@ -180,14 +178,12 @@ def delete_message(request, handler):
 
     user_data = get_user(user_token)
     curr_user_id = user_data["user_id"]
-    curr_author = user_data["author"]
 
     #check if it's actual author deleting the message
     curr_message = chat_collection.find_one({"id": get_message_id})
-    curr_message_author = curr_message["author"]
     curr_message_user_id = curr_message["user_id"]
 
-    if curr_user_id == curr_message_user_id and curr_author == curr_message_author:
+    if curr_user_id == curr_message_user_id: #same as update message, we dont need to match author, user_id is unique enough
         chat_collection.delete_one({"id": get_message_id})
         res.text("message deleted")
     else:
