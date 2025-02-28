@@ -113,9 +113,15 @@ def logout(request, handler):
         user_data = user_collection.find_one({"session": hashed_auth_token})
         if user_data:
             user_collection.update_one({"user_id": user_data["user_id"]}, {"$set": {"session": ""}})
-            
-    res.set_status(302, "Found")
-    res.cookies({"auth_token": "dummy; Max-Age=0; HttpOnly"})
+            res.set_status(302, "Found")
+            res.text("Logged out successfully!")
+        else:
+            res.set_status(400, "Bad Request")
+            res.text("Invalid authentication token, user not found")
+    else:
+        res.set_status(400, "Bad Request")
+        res.text("No authentication token found")
+    res.cookies({"auth_token": "dummy; Max-Age=0; HttpOnly; Path=/"})
     res.header["Location"] = "/"
     res.header["Content-Length"] = "0"    #for firefox
     handler.request.sendall(res.to_data())
