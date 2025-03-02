@@ -1,6 +1,7 @@
 import bcrypt
 import uuid
 import hashlib
+from util.totp import verify_totp
 
 from requests import session
 
@@ -14,6 +15,7 @@ def login(request, handler):
     credentials = extract_credentials(request)
     username = credentials[0]
     password = credentials[1]
+    totp = credentials[2]
     session_token = request.cookies.get("session")
 
     #Verify if the user exist and is the password is correct
@@ -33,6 +35,17 @@ def login(request, handler):
 
     #It's the correct user!
     user_data = user_collection.find_one({'author': username})
+
+    #verify if user enabled 2A
+    if "totp_secret" in user_data:
+        #totop--> the totp that the user typed in
+        if not verify_totp(totp, user_data):
+            res.set_status(401, "Unauthorized")
+            res.text("Invalid TOTP!!!")
+            handler.request.sendall(res.to_data())
+            return
+
+    #if totp is verified, continue on fetching details and generate auth_token
     user_id = user_data["user_id"] #should have, if not error
     user_img_url = user_data["imageURL"]
 
@@ -49,9 +62,8 @@ def login(request, handler):
         # Delete the session cookie
         res.cookies({"session": session_token + "; Max-Age=0"})
 
-    #Set auth token with a valid time for 1 day --> how to check if its invalid?
     #The cookie we send back will be auth_token, despite in db "session" --> can either be session token or auth token
-    res.cookies({"auth_token": auth_token + "; Max-Age=86400; HttpOnly"})
+    res.cookies({"auth_token": auth_token + "; Max-Age=86400; HttpOnly; Path=/"})
     res.text("Logged in successfully!")
     handler.request.sendall(res.to_data())
 
