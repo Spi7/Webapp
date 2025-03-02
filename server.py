@@ -6,6 +6,7 @@ from util.public_path import public_path
 from util.chat_path import get_message, create_message, select_chat_or_reaction
 from util.auth_path import registration, login, logout
 from util.api_user_path import select_method, update_profile
+from util.totp import enable_totp
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -35,6 +36,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #HW2, api/users
         self.router.add_route("GET", "/api/users", select_method, False)
         self.router.add_route("POST", "/api/users/settings", update_profile, True)
+        #HW2 AO1 TOTP
+        self.router.add_route("POST", "/api/totp/enable", enable_totp, True)
         super().__init__(request, client_address, server)
 
     def handle(self):

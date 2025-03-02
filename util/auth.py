@@ -28,12 +28,18 @@ def extract_credentials(request):
     username = body_split[0].split("=")[1]
     encoded_password = body_split[1].split("=")[1]
     password = decode_percent_password(encoded_password)
-    return [username, password]
+
+    #check if totp exist
+    totp = ""
+    if len(body_split) > 2:
+        totp_secret = body_split[2]
+        totp = totp_secret.split("=")[1]
+    return [username, password, totp]
 
 
 def validate_password(password):
     # check length of the password
-    if (len(password) < 8):
+    if len(password) < 8:
         return False
 
     #12 special characters
