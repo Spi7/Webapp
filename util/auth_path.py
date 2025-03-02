@@ -6,16 +6,16 @@ from util.totp import verify_totp
 from requests import session
 
 from util.response import Response
-from util.auth import extract_credentials, validate_password
+from util.auth import extract_credentials, validate_password, extract_totp
 from util.database import user_collection, chat_collection
 from util.chat_path import generate_profile_pic
 
 def login(request, handler):
     res = Response()
     credentials = extract_credentials(request)
+    totp = extract_totp(request)
     username = credentials[0]
     password = credentials[1]
-    totp = credentials[2]
     session_token = request.cookies.get("session")
 
     #Verify if the user exist and is the password is correct
@@ -37,9 +37,16 @@ def login(request, handler):
     user_data = user_collection.find_one({'author': username})
 
     #verify if user enabled 2A
-    if "totp_secret" in user_data:
+    if "totp_secret" in user_data and user_data["totp_secret"]:
         #totop--> the totp that the user typed in
+        if not totp:
+            #print("totp not found")
+            res.set_status(401, "Unauthorized")
+            res.text("No totp provided")
+            handler.request.sendall(res.to_data())
+            return
         if not verify_totp(totp, user_data):
+            #print("TrueorFalse: " + str(verify_totp(totp, user_data)))
             res.set_status(401, "Unauthorized")
             res.text("Invalid TOTP!!!")
             handler.request.sendall(res.to_data())

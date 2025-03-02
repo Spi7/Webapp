@@ -29,12 +29,17 @@ def extract_credentials(request):
     encoded_password = body_split[1].split("=")[1]
     password = decode_percent_password(encoded_password)
 
-    #check if totp exist
+    return [username, password]
+
+def extract_totp(request):
+    body = request.body.decode('utf-8')
+    body_split = body.split("&")
     totp = ""
     if len(body_split) > 2:
         totp_secret = body_split[2]
         totp = totp_secret.split("=")[1]
-    return [username, password, totp]
+    #print("Current totp is: " + totp)
+    return totp
 
 
 def validate_password(password):

@@ -29,6 +29,7 @@ def enable_totp(request, handler):
 def verify_totp(totp_code, user_data):
     totp_secret = user_data.get("totp_secret")
     if not totp_code or not totp_secret:
+        print("wrong here")
         return False
 
     totp = pyotp.TOTP(totp_secret)
