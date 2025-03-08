@@ -7,6 +7,7 @@ from util.chat_path import get_message, create_message, select_chat_or_reaction
 from util.auth_path import registration, login, logout
 from util.api_user_path import select_method, update_profile
 from util.totp import enable_totp
+from util.github_api import github_api_call, github_callback
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -38,7 +39,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("POST", "/api/users/settings", update_profile, True)
         #HW2 AO1 TOTP
         self.router.add_route("POST", "/api/totp/enable", enable_totp, True)
+        #HW2 AO2 Github
+        self.router.add_route("GET", "/authgithub", github_api_call, True)
+        self.router.add_route("GET", "/authcallback", github_callback, False)
+
         super().__init__(request, client_address, server)
+
 
     def handle(self):
         received_data = self.request.recv(2048)
