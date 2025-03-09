@@ -5,6 +5,7 @@ import os
 import hashlib
 import requests
 from util.response import Response
+from util.github_api import get_repos, star_repo
 from util.database import chat_collection, user_collection
 
 def select_chat_or_reaction(request, handler):
@@ -97,6 +98,38 @@ def create_message(request, handler):
     #if there's an auth_token, we will auth, else session
     user_data = get_user(user_token)
     message_id = str(uuid.uuid4())
+
+    if body_content.startswith("/"):
+        if not user_data.get("github") or not auth_token:
+            res.set_status(403, "Forbidden")
+            res.text("You're not an authorized github user with token.")
+            handler.request.sendall(res.to_data())
+            return
+
+        command_and_user = body_content.split(" ")
+        if len(command_and_user) == 2:
+            result = ""
+            command = command_and_user[0]
+            if command == "/repos":
+                username = command_and_user[1]
+                repos = get_repos(username)
+                result = "The repositories for " + username + ": " + repos
+            elif command == "/star":
+                repo_name = command_and_user[1]
+                result = star_repo(auth_token, repo_name)
+            else:
+                res.set_status(400, "Bad request")
+                res.text("Invalid commands")
+                handler.request.sendall(res.to_data())
+                return
+
+            if result == "" or result == "failed":
+                res.set_status(400, "Bad request")
+                res.text("result returned empty")
+                handler.request.sendall(res.to_data())
+                return
+
+            body_content = result
 
     chat_collection.insert_one({
         "id": message_id,

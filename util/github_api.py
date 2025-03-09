@@ -4,8 +4,9 @@ import requests
 import uuid
 from util.response import Response
 from util.configuration import GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, REDIRECT_URI
-from util.database import user_collection
+from util.database import user_collection, chat_collection
 
+access_tokens = {}
 # 1) Users are redirected to request their GitHub identity
 # 2) Users are redirected back to your site by GitHub
 # 3) Your app accesses the API with the user's access token
@@ -70,6 +71,8 @@ def github_callback(request, handler):
             auth_token = str(uuid.uuid4())
             hashed_auth_token = hashlib.sha256(auth_token.encode()).hexdigest()
 
+            access_tokens[auth_token] = access_token
+
             user_data = user_collection.find_one({"author": username})
 
             if user_data:
@@ -82,10 +85,25 @@ def github_callback(request, handler):
                     "author": username,
                     "nickname": username,
                     "email": user_email,
-                    "imageURL": ""
+                    "imageURL": "",
+                    "github": True
                 })
+            #similar as login, update messages send as guest
+            session_token = request.cookies.get("session")
+            if session_token:
+                #get the current stored user_data for github user once again
+                user_data = user_collection.find_one({"author": username})
+
+                user_guest = user_collection.find_one({"session": session_token})
+                user_guest_user_id = user_guest.get("user_id")
+                chat_collection.update_many({"user_id": user_guest_user_id}, {
+                    "$set": {"user_id": user_data.get("user_id"), "author": username, "nickname": username, "imageURL": ""}})
+                user_collection.delete_one({"user_id": user_guest_user_id})
+                # Delete the session cookie
+                res.cookies({"session": session_token + "; Max-Age=0"})
 
             res.cookies({"auth_token": auth_token + "; Max-Age=86400; HttpOnly; Path=/"})
+            res.cookies({"oauth_state": curr_state + "; Max-Age=0; HttpOnly; Path=/"})
             res.set_status(302, "Found")
             res.header["Location"] = "/"
             handler.request.sendall(res.to_data())
@@ -98,3 +116,30 @@ def github_callback(request, handler):
         res.set_status("400", "Bad Request")
         res.text("No code found from headers")
         handler.request.sendall(res.to_data())
+
+def get_repos(username):
+    url = "https://api.github.com/users/" + username + "/repos" + "?per_page=50"
+    github_response = requests.get(url) #Method: GET --> /users/{username}/repos
+
+    if github_response.status_code == 200:
+        repositories = github_response.json()
+        repo_list = []
+
+        for repository in repositories:
+            #each link should bring you to the user's actual repositories rather than the whole repo list page
+            link = '<a href="https://github.com/' + username + "/" + repository["name"] + '">' + repository["name"] + "</a>"
+            repo_list.append(link)
+        return ", ".join(repo_list)
+    return "failed"
+
+def star_repo(auth_token, repo_name):
+    # user_data = user_collection.find_one({"session": auth_token})
+    # curr_username = user_data.get("author")
+    url = "https://api.github.com/user/starred/" + repo_name
+    auth_header = {"Authorization": "token " + access_tokens[auth_token]}
+    github_response = requests.put(url, headers=auth_header) #Method:PUT --> /user/starred/{owner}/{repo}
+
+    #when user typed, the second part would be owner/repo_name
+    if github_response.status_code == 204:
+        return "User has starred " + '<a href="https://github.com/' + repo_name + '" style="color:lightblue;">' + repo_name + "</a>"
+    return "failed"
