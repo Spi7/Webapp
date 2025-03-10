@@ -60,7 +60,7 @@ def github_callback(request, handler):
             #in token_json there should have the access_token
             access_token = token_json["access_token"]
             user_url = "https://api.github.com/user"
-            auth_header = {"Authorization": "token " + access_token}
+            auth_header = {"Authorization": "Bearer " + access_token}
 
             user_res = requests.get(user_url, headers=auth_header)
             user_info = user_res.json()
@@ -137,7 +137,7 @@ def star_repo(auth_token, repo_name):
     # user_data = user_collection.find_one({"session": hashed_auth_token})
     # curr_username = user_data.get("author")
     url = "https://api.github.com/user/starred/" + repo_name
-    auth_header = {"Authorization": "token " + access_tokens[auth_token]}
+    auth_header = {"Authorization": "Bearer " + access_tokens[auth_token]}
     github_response = requests.put(url, headers=auth_header) #Method:PUT --> /user/starred/{owner}/{repo}
 
     #when user typed, the second part would be owner/repo_name
@@ -147,7 +147,7 @@ def star_repo(auth_token, repo_name):
 
 def create_issue(auth_token, repo, title):
     url = "https://api.github.com/repos/" + repo + "/issues"
-    auth_header = {"Authorization": "token " + access_tokens[auth_token]}
+    auth_header = {"Authorization": "Bearer " + access_tokens[auth_token]}
     data = {"title": title, "body": ""}
     github_response = requests.post(url, headers=auth_header, json=data) #Method: POST -->/repos/{owner}/{repo}/issues
 
