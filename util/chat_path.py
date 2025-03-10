@@ -5,7 +5,7 @@ import os
 import hashlib
 import requests
 from util.response import Response
-from util.github_api import get_repos, star_repo
+from util.github_api import get_repos, star_repo, create_issue
 from util.database import chat_collection, user_collection
 
 def select_chat_or_reaction(request, handler):
@@ -102,11 +102,11 @@ def create_message(request, handler):
     if body_content.startswith("/"):
         if not user_data.get("github") or not auth_token:
             res.set_status(403, "Forbidden")
-            res.text("You're not an authorized github user with token.")
+            res.text("You're not an authorized github user with token. You cannot use '/' commands")
             handler.request.sendall(res.to_data())
             return
 
-        command_and_user = body_content.split(" ")
+        command_and_user = body_content.split(" ", 2)
         if len(command_and_user) == 2:
             result = ""
             command = command_and_user[0]
@@ -119,17 +119,41 @@ def create_message(request, handler):
                 result = star_repo(auth_token, repo_name)
             else:
                 res.set_status(400, "Bad request")
-                res.text("Invalid commands")
+                res.text("Invalid commands, 2 parts")
                 handler.request.sendall(res.to_data())
                 return
 
             if result == "" or result == "failed":
                 res.set_status(400, "Bad request")
-                res.text("result returned empty")
+                res.text("Result is empty for repo or star")
                 handler.request.sendall(res.to_data())
                 return
-
+            #set the text display as the result
             body_content = result
+        elif len(command_and_user) == 3:
+            result = ""
+            command = command_and_user[0]
+            if command == "/createissue":
+                repo_name = command_and_user[1]
+                title = command_and_user[2]
+                result = create_issue(auth_token, repo_name, title)
+            else:
+                res.set_status(400, "Bad request")
+                res.text("Invalid commands, 3 parts")
+                handler.request.sendall(res.to_data())
+                return
+            if result == "" or result == "failed":
+                res.set_status(400, "Bad request")
+                res.text("Result is empty for create_issue")
+                handler.request.sendall(res.to_data())
+                return
+            # set body content to result
+            body_content = result
+        else:
+            res.set_status(403, "Forbidden")
+            res.text("The command is not supported")
+            handler.request.sendall(res.to_data())
+            return
 
     chat_collection.insert_one({
         "id": message_id,

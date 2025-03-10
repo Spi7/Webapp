@@ -133,7 +133,8 @@ def get_repos(username):
     return "failed"
 
 def star_repo(auth_token, repo_name):
-    # user_data = user_collection.find_one({"session": auth_token})
+    # hashed_auth_token = hashlib.sha256(auth_token.encode()).hexdigest()
+    # user_data = user_collection.find_one({"session": hashed_auth_token})
     # curr_username = user_data.get("author")
     url = "https://api.github.com/user/starred/" + repo_name
     auth_header = {"Authorization": "token " + access_tokens[auth_token]}
@@ -142,4 +143,15 @@ def star_repo(auth_token, repo_name):
     #when user typed, the second part would be owner/repo_name
     if github_response.status_code == 204:
         return "User has starred " + '<a href="https://github.com/' + repo_name + '" style="color:lightblue;">' + repo_name + "</a>"
+    return "failed"
+
+def create_issue(auth_token, repo, title):
+    url = "https://api.github.com/repos/" + repo + "/issues"
+    auth_header = {"Authorization": "token " + access_tokens[auth_token]}
+    data = {"title": title, "body": ""}
+    github_response = requests.post(url, headers=auth_header, json=data) #Method: POST -->/repos/{owner}/{repo}/issues
+
+    if github_response.status_code == 201:
+        html_url = github_response.json()["html_url"]
+        return "User has created an issue: " + '<a href="' + html_url + '" style="color:lightblue;">' + title + "</a>"
     return "failed"
