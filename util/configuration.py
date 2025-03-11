@@ -8,5 +8,5 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 REDIRECT_URI = os.environ.get('REDIRECT_URI')
 
 #Google, useless for now, but for practice
-# GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-# GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+# GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+# GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')

@@ -3,8 +3,6 @@ import uuid
 import hashlib
 from util.totp import verify_totp
 
-from requests import session
-
 from util.response import Response
 from util.auth import extract_credentials, validate_password, extract_totp
 from util.database import user_collection, chat_collection
