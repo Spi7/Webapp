@@ -36,6 +36,15 @@ def public_path(request, handler):
         file_path = "public/search-users.html"
     elif request.path == "/settings":
         file_path = "public/settings.html"
+    elif request.path == "/change-avatar":
+        file_path = "public/change-avatar.html"
+    elif request.path == "/videotube":
+        if request.path.startswith("/videotube/upload"):
+            file_path = "public/upload.html"
+        elif request.path.startswith("/videotube/videos"):
+            file_path = "public/view-video.html"
+        else:
+            file_path = "public/videotube.html"
     else:
         file_path = request.path.split("/public", 1)[1]
         file_path = "public" + file_path
