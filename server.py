@@ -65,6 +65,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             remaining_length = content_length - len(request.body)
             chunk = min(2048, remaining_length)
             request.body += self.request.recv(chunk)
+            # print("--- received chunk body ---")
+            # print(request.body)
 
         self.router.route_request(request, self)
 
