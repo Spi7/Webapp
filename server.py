@@ -77,10 +77,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         full_data = received_data + request_body
         full_request = Request(full_data)
 
-        print(self.client_address)
-        print("--- received body ---")
-        print(full_data)
-        print("--- end of body ---\n\n")
+        # print(self.client_address)
+        # print("--- received body ---")
+        # print(full_data)
+        # print("--- end of body ---\n\n")
 
         self.router.route_request(full_request, self)
 
