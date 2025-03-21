@@ -59,36 +59,25 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         received_data = self.request.recv(2048)
         request = Request(received_data)
 
+        content_length = request.headers.get("Content-Length")
+        if content_length:
+            body = request.body
+
+            while(len(body) < int(content_length)):
+                chunk = self.request.recv(2048)
+                body += chunk
+            request.body = body
+
         # print(self.client_address)
         # print("--- received data ---")
         # print(received_data)
         # print("--- end of data ---\n\n")
-
-        #buffering
-        content_length = int(request.headers.get("Content-Length", 0))
-        request_body = b''
-        while len(request_body) < content_length:
-            # remaining_length = content_length - len(request_body)
-            # chunk = min(2048, remaining_length)
-            # request_body += self.request.recv(chunk)
-            request_body += self.request.recv(content_length - len(request_body))
-            # print("--- received chunk body ---")
-            # print(request.body)
-        full_data = received_data + request_body
-        full_request = Request(full_data)
-
-        # print(self.client_address)
-        # print("--- received body ---")
-        # print(full_data)
-        # print("--- end of body ---\n\n")
-
-        self.router.route_request(full_request, self)
-
+        self.router.route_request(request, self)
 
 def main():
     host = "0.0.0.0"
     port = 8080
-    # socketserver.TCPServer.allow_reuse_address = True
+    #socketserver.TCPServer.allow_reuse_address = True
     socketserver.ThreadingTCPServer.allow_reuse_address = True
 
     # server = socketserver.TCPServer((host, port), MyTCPHandler)
