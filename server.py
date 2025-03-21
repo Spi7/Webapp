@@ -8,6 +8,7 @@ from util.auth_path import registration, login, logout
 from util.api_user_path import select_method, update_profile
 from util.totp import enable_totp
 from util.github_api import github_api_call, github_callback
+from util.upload_video import select_video_method
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -48,6 +49,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("GET", "/change-avatar", public_path, True)
         self.router.add_route("GET", "/videotube", public_path, False)
         #change avatar uses api/users/avatar (POST request, go to api_user_path.py)
+        #HW3 upload videos
+        self.router.add_route("GET", "/api/videos", select_video_method, False)
+        self.router.add_route("POST", "/api/videos", select_video_method, False)
         super().__init__(request, client_address, server)
 
 

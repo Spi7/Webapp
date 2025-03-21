@@ -49,11 +49,8 @@ def change_avatar(request, handler):
     parsed_multidata = parse_multipart(request) #return a MultiDataParser object
 
     for part in parsed_multidata.parts:
-        print(f"Processing part: {part.name} (Type: {type(part.name)})")  # Debug
-        print(f"Headers: {part.headers}")  # Print headers to inspect
         if part.name == "avatar":
             dict = get_things_in_content_disposition(part.headers)
-            print("I am inside the loop")
             file_name = dict.get("filename")
             file_path = store_avatar(file_name, part.content)
             if not file_path:

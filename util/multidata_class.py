@@ -4,7 +4,7 @@ class Part:
         self.name = name
         self.content = content
 
-class MultiDataParser:
+class MultiData:
     def __init__(self, boundary, parts):
         self.boundary = boundary
         self.parts = parts

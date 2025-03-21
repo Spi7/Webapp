@@ -11,7 +11,8 @@ mime_types = {
     ".ico": "image/x-icon",
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
-    ".webp": "image/webp"
+    ".webp": "image/webp",
+    ".mp4": "video/mp4"
 }
 
 def get_file_extension(file_name):
@@ -38,7 +39,7 @@ def public_path(request, handler):
         file_path = "public/settings.html"
     elif request.path == "/change-avatar":
         file_path = "public/change-avatar.html"
-    elif request.path == "/videotube":
+    elif request.path.startswith("/videotube"):
         if request.path.startswith("/videotube/upload"):
             file_path = "public/upload.html"
         elif request.path.startswith("/videotube/videos"):
