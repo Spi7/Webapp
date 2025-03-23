@@ -89,15 +89,16 @@ def post_video(request, handler):
         "created_at": created_at
     }
 
-    video_duration = get_video_duration(video_path)
-    if video_duration <= 60 and TRANSCRIPTION_API_KEY != "changeMe": #at max 1 minute
-        # print("I ran here==========================================================")
-        audio_path = video_path.replace(".mp4", ".mp3")
-        convert_video_to_audio(video_path, audio_path)
+    if TRANSCRIPTION_API_KEY != "changeMe":
+        video_duration = get_video_duration(video_path)
+        if video_duration <= 60: #at max 1 minute
+            # print("I ran here==========================================================")
+            audio_path = video_path.replace(".mp4", ".mp3")
+            convert_video_to_audio(video_path, audio_path)
 
-        transcription_id = get_transcription_id(audio_path)
-        if transcription_id:
-            video_data["transcription_id"] = transcription_id
+            transcription_id = get_transcription_id(audio_path)
+            if transcription_id:
+                video_data["transcription_id"] = transcription_id
 
     video_collection.insert_one(video_data)
     res.json({"id": video_id})
