@@ -3,6 +3,7 @@ from util.response import Response
 from util.database import user_collection, video_collection
 from util.multipart import parse_multipart, get_things_in_content_disposition
 from util.public_path import get_file_extension
+from util.transcript import get_video_duration, get_transcription_id, subtitle_api, convert_video_to_audio
 from datetime import datetime, date
 import uuid
 import json
@@ -78,15 +79,25 @@ def post_video(request, handler):
 
     video_id = str(uuid.uuid4()) #generate an unique id for video
     created_at = date.today().strftime("%B %d, %Y") #%B --> convert MM to Months in English, %d--> day, with 0 padding if its single dig, %Y-->Year
-    video_collection.insert_one({
+    video_data = {
         "video_id": video_id,
         "user_id": user_id,
         "title": title,
         "description": description,
         "video_path": video_path,
         "created_at": created_at
-    })
+    }
 
+    video_duration = get_video_duration(video_path)
+    if video_duration <= 60: #at max 1 minute
+        audio_path = video_path.replace(".mp4", ".mp3")
+        convert_video_to_audio(video_path, audio_path)
+
+        transcription_id = get_transcription_id(audio_path)
+        if transcription_id:
+            video_data["transcription_id"] = transcription_id
+
+    video_collection.insert_one(video_data)
     res.json({"id": video_id})
     handler.request.sendall(res.to_data())
 

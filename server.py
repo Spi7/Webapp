@@ -9,6 +9,7 @@ from util.api_user_path import select_method, update_profile
 from util.totp import enable_totp
 from util.github_api import github_api_call, github_callback
 from util.upload_video import select_video_method
+from util.transcript import subtitle_api
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -52,6 +53,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #HW3 upload videos
         self.router.add_route("GET", "/api/videos", select_video_method, False)
         self.router.add_route("POST", "/api/videos", select_video_method, False)
+        #HW3 AO1 Subtitles <--> Transcript
+        self.router.add_route("GET", "/api/transcriptions", subtitle_api, False)
         super().__init__(request, client_address, server)
 
 
