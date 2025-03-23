@@ -8,17 +8,24 @@ import os
 
 mime_types = {
     ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
     ".png": "image/png",
     ".gif": "image/gif",
 }
 
 os.makedirs("public/imgs/profile-pics", exist_ok=True)
 
-def store_avatar(filename, image):
-    extension = get_file_extension(filename)
-    if extension not in mime_types:
+def validate_signature(content):
+    if content.startswith(b'\xff\xd8\xff'):
+        return ".jpg"
+    elif content.startswith(b'\x89PNG\r\n\x1a'):
+        return ".png"
+    elif content.startswith(b'GIF87a') or content.startswith(b'GIF89'):
+        return ".gif"
+    else:
         return None
 
+def store_avatar(extension, image):
     profile_dir = "public/imgs/profile-pics"
     files = []
     for file in os.listdir(profile_dir):
@@ -52,12 +59,15 @@ def change_avatar(request, handler):
         if part.name == "avatar":
             dict = get_things_in_content_disposition(part.headers)
             file_name = dict.get("filename")
-            file_path = store_avatar(file_name, part.content)
-            if not file_path:
+            content = part.content
+            extension = validate_signature(content)
+
+            if extension not in mime_types:
                 res.set_status(403, "Forbidden")
                 res.text("The file you upload ins invalid, it must be either jpg, png, or gif")
                 handler.request.sendall(res.to_data())
                 return
+            file_path = store_avatar(extension, content)
             user_collection.update_one({"session": hashed_auth_token}, {"$set": {"imageURL": file_path}})
             break
 

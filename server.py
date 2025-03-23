@@ -68,10 +68,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 body += chunk
             request.body = body
 
-        # print(self.client_address)
-        # print("--- received data ---")
-        # print(received_data)
-        # print("--- end of data ---\n\n")
+        print(self.client_address)
+        print("--- received data ---")
+        print(received_data)
+        print("--- end of data ---\n\n")
         self.router.route_request(request, self)
 
 def main():
