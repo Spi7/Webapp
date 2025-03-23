@@ -4,6 +4,7 @@ from util.database import user_collection, video_collection
 from util.multipart import parse_multipart, get_things_in_content_disposition
 from util.public_path import get_file_extension
 from util.transcript import get_video_duration, get_transcription_id, subtitle_api, convert_video_to_audio
+from util.configuration import TRANSCRIPTION_API_KEY
 from datetime import datetime, date
 import uuid
 import json
@@ -89,7 +90,8 @@ def post_video(request, handler):
     }
 
     video_duration = get_video_duration(video_path)
-    if video_duration <= 60: #at max 1 minute
+    if video_duration <= 60 and TRANSCRIPTION_API_KEY != "changeMe": #at max 1 minute
+        # print("I ran here==========================================================")
         audio_path = video_path.replace(".mp4", ".mp3")
         convert_video_to_audio(video_path, audio_path)
 
