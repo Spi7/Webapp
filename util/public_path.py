@@ -44,6 +44,8 @@ def public_path(request, handler):
             file_path = "public/upload.html"
         elif request.path.startswith("/videotube/videos"):
             file_path = "public/view-video.html"
+        elif request.path.startswith("/videotube/set-thumbnail"):
+            file_path = "public/set-thumbnail.html"
         else:
             file_path = "public/videotube.html"
     else:

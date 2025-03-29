@@ -10,6 +10,7 @@ from util.totp import enable_totp
 from util.github_api import github_api_call, github_callback
 from util.upload_video import select_video_method
 from util.transcript import subtitle_api
+from util.thumbnail import set_thumbnail
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -55,6 +56,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("POST", "/api/videos", select_video_method, False)
         #HW3 AO1 Subtitles <--> Transcript
         self.router.add_route("GET", "/api/transcriptions", subtitle_api, False)
+        #HW3 AO2 Add thumbnails
+        self.router.add_route("PUT", "/api/thumbnails", set_thumbnail, False)
         super().__init__(request, client_address, server)
 
 
@@ -71,10 +74,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 body += chunk
             request.body = body
 
-        # print(self.client_address)
-        # print("--- received data ---")
-        # print(received_data)
-        # print("--- end of data ---\n\n")
+        print(self.client_address)
+        print("--- received data ---")
+        print(received_data)
+        print("--- end of data ---\n\n")
         self.router.route_request(request, self)
 
 def main():

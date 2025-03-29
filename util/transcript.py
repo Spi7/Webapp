@@ -4,7 +4,7 @@ from util.database import video_collection
 
 import subprocess
 import requests
-import math
+import ffmpeg
 
 """
 - `-i`: Specifies the input file.
@@ -21,7 +21,7 @@ def convert_video_to_audio(video_path, audio_path):
 def get_video_duration(video_path):
     command = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {}".format(video_path)
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return math.ceil(float(result.stdout.strip()))
+    return float(result.stdout.strip())
 
 
 def get_transcription_id(audio_path):

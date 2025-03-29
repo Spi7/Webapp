@@ -5,6 +5,7 @@ from util.multipart import parse_multipart, get_things_in_content_disposition
 from util.public_path import get_file_extension
 from util.transcript import get_video_duration, get_transcription_id, subtitle_api, convert_video_to_audio
 from util.configuration import TRANSCRIPTION_API_KEY
+from util.thumbnail import choose_thumbnail
 from datetime import datetime, date
 import uuid
 import json
@@ -89,8 +90,8 @@ def post_video(request, handler):
         "created_at": created_at
     }
 
+    video_duration = get_video_duration(video_path)
     if TRANSCRIPTION_API_KEY != "changeMe":
-        video_duration = get_video_duration(video_path)
         if video_duration <= 60: #at max 1 minute
             # print("I ran here==========================================================")
             audio_path = video_path.replace(".mp4", ".mp3")
@@ -99,6 +100,10 @@ def post_video(request, handler):
             transcription_id = get_transcription_id(audio_path)
             if transcription_id:
                 video_data["transcription_id"] = transcription_id
+
+    thumbnails = choose_thumbnail(video_path, video_id, video_duration)
+    video_data["thumbnails"] = thumbnails
+    video_data["thumbnailURL"] = thumbnails[0]
 
     video_collection.insert_one(video_data)
     res.json({"id": video_id})
@@ -117,7 +122,8 @@ def get_all_videos(request, handler):
             "description": video["description"],
             "video_path": video["video_path"],
             "created_at": video["created_at"],
-            "id": video["video_id"]
+            "id": video["video_id"],
+            "thumbnailURL": video.get("thumbnailURL", "")
         }
         all_videos.append(curr_video_info)
 
@@ -136,7 +142,9 @@ def get_one_video(request, handler):
         "description": this_video["description"],
         "video_path": this_video["video_path"],
         "created_at": this_video["created_at"],
-        "id": this_video["video_id"]
+        "id": this_video["video_id"],
+        "thumbnails": this_video.get("thumbnails", []),
+        "thumbnailURL": this_video.get("thumbnailURL", "")
     }
 
     res.json({"video": video_data})
