@@ -19,10 +19,11 @@ def convert_video_to_audio(video_path, audio_path):
     subprocess.call(command, shell=True)
 
 def get_video_duration(video_path):
-    command = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {}".format(video_path)
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return float(result.stdout.strip())
-
+    # command = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {}".format(video_path)
+    # result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    probe = ffmpeg.probe(video_path)
+    duration = float(probe["format"]["duration"])
+    return duration
 
 def get_transcription_id(audio_path):
     with open (audio_path, 'rb') as audio_file:
