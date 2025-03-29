@@ -90,8 +90,9 @@ def post_video(request, handler):
         "description": description,
         "video_path": video_path,
         "created_at": created_at,
-        "hls_path": hls_path
     }
+    if hls_path:
+        video_data["hls_path"] = hls_path
 
     video_duration = get_video_duration(video_path)
     if TRANSCRIPTION_API_KEY != "changeMe":
@@ -127,7 +128,7 @@ def get_all_videos(request, handler):
             "created_at": video["created_at"],
             "id": video["video_id"],
             "thumbnailURL": video.get("thumbnailURL", ""),
-            "hls_path": video.get("hls_path", "")
+            "hls_path": video.get("hls_path", video["video_path"])
         }
         all_videos.append(curr_video_info)
 
@@ -149,7 +150,7 @@ def get_one_video(request, handler):
         "id": this_video["video_id"],
         "thumbnails": this_video.get("thumbnails", []),
         "thumbnailURL": this_video.get("thumbnailURL", ""),
-        "hls_path": this_video.get("hls_path", "")
+        "hls_path": this_video.get("hls_path", this_video["video_path"])
     }
 
     res.json({"video": video_data})
