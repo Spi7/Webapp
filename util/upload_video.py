@@ -6,6 +6,7 @@ from util.public_path import get_file_extension
 from util.transcript import get_video_duration, get_transcription_id, subtitle_api, convert_video_to_audio
 from util.configuration import TRANSCRIPTION_API_KEY
 from util.thumbnail import choose_thumbnail
+from util.hls import encode_hls
 from datetime import datetime, date
 import uuid
 import json
@@ -78,7 +79,8 @@ def post_video(request, handler):
                 return
             video_content = part.content #keep it in bytes
             video_path = store_video(video_content)
-
+    video_name = video_path.rsplit("/", 1)[1].replace(".mp4", "")
+    hls_path = encode_hls(video_path, video_name)
     video_id = str(uuid.uuid4()) #generate an unique id for video
     created_at = date.today().strftime("%B %d, %Y") #%B --> convert MM to Months in English, %d--> day, with 0 padding if its single dig, %Y-->Year
     video_data = {
@@ -87,7 +89,8 @@ def post_video(request, handler):
         "title": title,
         "description": description,
         "video_path": video_path,
-        "created_at": created_at
+        "created_at": created_at,
+        "hls_path": hls_path
     }
 
     video_duration = get_video_duration(video_path)
@@ -123,7 +126,8 @@ def get_all_videos(request, handler):
             "video_path": video["video_path"],
             "created_at": video["created_at"],
             "id": video["video_id"],
-            "thumbnailURL": video.get("thumbnailURL", "")
+            "thumbnailURL": video.get("thumbnailURL", ""),
+            "hls_path": video.get("hls_path", "")
         }
         all_videos.append(curr_video_info)
 
@@ -144,7 +148,8 @@ def get_one_video(request, handler):
         "created_at": this_video["created_at"],
         "id": this_video["video_id"],
         "thumbnails": this_video.get("thumbnails", []),
-        "thumbnailURL": this_video.get("thumbnailURL", "")
+        "thumbnailURL": this_video.get("thumbnailURL", ""),
+        "hls_path": this_video.get("hls_path", "")
     }
 
     res.json({"video": video_data})

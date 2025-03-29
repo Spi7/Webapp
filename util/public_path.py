@@ -12,7 +12,9 @@ mime_types = {
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
     ".webp": "image/webp",
-    ".mp4": "video/mp4"
+    ".mp4": "video/mp4",
+    ".m3u8": "application/vnd.apple.mpegurl",
+    ".ts": "video/mp2t"
 }
 
 def get_file_extension(file_name):
