@@ -11,6 +11,7 @@ from util.github_api import github_api_call, github_callback
 from util.upload_video import select_video_method
 from util.transcript import subtitle_api
 from util.thumbnail import set_thumbnail
+from util.ws_handshake import handle_ws_connection
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -58,6 +59,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("GET", "/api/transcriptions", subtitle_api, False)
         #HW3 AO2 Add thumbnails
         self.router.add_route("PUT", "/api/thumbnails", set_thumbnail, False)
+
+        #HW4 WebSocket
+        self.router.add_route("GET", "/websocket", handle_ws_connection, True)
         super().__init__(request, client_address, server)
 
 
@@ -65,11 +69,17 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         received_data = self.request.recv(2048)
         request = Request(received_data)
 
+        #upgrade to WebSocket
+        headers = request.headers
+        if headers.get("Upgrade") == "websocket":
+            handle_ws_connection(request, self)
+            return
+
         content_length = request.headers.get("Content-Length")
         if content_length:
             body = request.body
 
-            while(len(body) < int(content_length)):
+            while len(body) < int(content_length):
                 chunk = self.request.recv(2048)
                 body += chunk
             request.body = body
