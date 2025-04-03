@@ -48,3 +48,37 @@ def generate_ws_frame(payload: bytes):
 
     frame.extend(payload)
     return bytes(frame)
+
+
+def test_parse_frame():
+    frame = bytearray()
+
+    byte0 = 0b10000001
+    frame.append(byte0)
+
+    byte1 = 0b00000001 #payload length = 1
+    frame.append(byte1)
+
+    payload = 0b00000000
+    frame.append(payload)
+
+    bytes_frame = bytes(frame)
+
+    expected = wsFrame()
+    expected.fin_bit = 1
+    expected.opcode = 1
+    expected.payload_length = 1
+
+    actual = wsFrame()
+    actual.parse_headers(bytes_frame)
+
+    assert expected.fin_bit == actual.fin_bit
+    assert expected.opcode == actual.opcode
+    assert expected.payload_length == actual.payload_length
+
+    expected.payload = b"00"
+    actual.parse_payload(bytes_frame)
+    assert expected.payload == actual.payload
+
+if __name__ == '__main__':
+    test_parse_frame()

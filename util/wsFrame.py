@@ -83,13 +83,14 @@ class wsFrame:
             curr_byte_idx += 9  # curr_byte_index = 10 (11th bytes)
 
         if self.mask_bit == 1:
-            curr_byte_idx += 4
-        self.header_length = curr_byte_idx
+            self.header_length = curr_byte_idx + 4
+        else:
+            self.header_length = curr_byte_idx
 
     def parse_payload(self, bytes_frame):
         curr_byte_idx = self.header_length
         if self.mask_bit == 1:
-            masking_key = bytes_frame[curr_byte_idx: curr_byte_idx + 4]
+            masking_key = bytes_frame[curr_byte_idx: curr_byte_idx+4]
             curr_byte_idx += 4
 
             masked_payload = bytes_frame[curr_byte_idx: curr_byte_idx + self.payload_length]
