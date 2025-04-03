@@ -50,6 +50,17 @@ def public_path(request, handler):
             file_path = "public/set-thumbnail.html"
         else:
             file_path = "public/videotube.html"
+    elif request.path == "/test-websocket":
+        file_path = "public/test-websocket.html"
+    elif request.path == "/drawing-board":
+        file_path = "public/drawing-board.html"
+    elif request.path == "/direct-messaging":
+        file_path = "public/direct-messaging.html"
+    elif request.path.startswith("/video-call"):
+        if request.path == "/video-call":
+            file_path = "public/video-call.html"
+        else:
+            file_path = "public/video-call-room.html"
     else:
         file_path = request.path.split("/public", 1)[1]
         file_path = "public" + file_path

@@ -62,6 +62,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
         #HW4 WebSocket
         self.router.add_route("GET", "/websocket", handle_ws_connection, True)
+        #HW4 RenderPages
+        self.router.add_route("GET", "/test-websocket", public_path, True)
+        self.router.add_route("GET", "/drawing-board", public_path, True)
+        self.router.add_route("GET", "/direct-messaging", public_path, True)
+        self.router.add_route("GET", "/video-call", public_path, False)
+
         super().__init__(request, client_address, server)
 
 

@@ -43,6 +43,7 @@ class wsFrame:
         self.mask_bit = 0
         self.payload = b""  # The unmasked bytes of the payload
         self.header_length = 0
+        self.mask_key = b""
 
     def parse_headers(self, bytes_frame):
         # use to track of the byte index we're in
@@ -64,7 +65,7 @@ class wsFrame:
         if curr_payload_length < 126:  # 7 bits mode
             self.payload_length = curr_payload_length
             # move to the byte --> mask key / payload data
-            curr_byte_idx += 1  # --> idx 2 (third byte)
+            curr_byte_idx += 1  # --> idx 2 (third byte) will be with mask key or payload data
 
         elif curr_payload_length == 126:  # 16 bits mode
             curr_byte_idx += 1
@@ -76,29 +77,28 @@ class wsFrame:
             self.payload_length = (third_byte << 8) | fourth_byte
             curr_byte_idx += 1  # curr_byte_index = 4 (5th bytes)
         elif curr_payload_length == 127:  # 64 bits mode
+            curr_byte_idx += 1
             payload_len = 0
-            for i in range(2, 10):  # next 8 bytes
-                payload_len = (payload_len << 8) | bytes_frame[i]
+            for i in range(8):  # next 8 bytes
+                payload_len = (payload_len << 8) | bytes_frame[curr_byte_idx+i]
             self.payload_length = payload_len
-            curr_byte_idx += 9  # curr_byte_index = 10 (11th bytes)
+            curr_byte_idx += 8  # curr_byte_index = 10 (11th bytes)
 
         if self.mask_bit == 1:
             self.header_length = curr_byte_idx + 4
+            self.mask_key = bytes_frame[curr_byte_idx: curr_byte_idx+4]
         else:
             self.header_length = curr_byte_idx
 
     def parse_payload(self, bytes_frame):
         curr_byte_idx = self.header_length
         if self.mask_bit == 1:
-            masking_key = bytes_frame[curr_byte_idx: curr_byte_idx+4]
-            curr_byte_idx += 4
-
+            masking_key = self.mask_key
             masked_payload = bytes_frame[curr_byte_idx: curr_byte_idx + self.payload_length]
 
-            byte_payload = b""
+            byte_payload = bytearray()
             for i in range(self.payload_length):
-                curr_byte = bytes(masked_payload[i] ^ masking_key[i % 4])
-                byte_payload += curr_byte
-            self.payload = byte_payload
+                byte_payload.append(masked_payload[i] ^ masking_key[i % 4])
+            self.payload = bytes(byte_payload)
         else:  # mask_bit = 0
             self.payload = bytes_frame[curr_byte_idx: curr_byte_idx + self.payload_length]

@@ -21,7 +21,7 @@ def handle_ws_connection(request, handler):
     hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
     user = user_collection.find_one({'session': hashed_auth_token})
 
-    username = user['username']
+    username = user['nickname']
 
     active_connections[username] = handler.request #each user's username map to each of their web socket connection
 
@@ -29,14 +29,18 @@ def handle_ws_connection(request, handler):
     accept_response = compute_accept(socket_key)
 
     res.set_status(101, "Switching Protocols")
-    res.headers([{"Upgrade": "websocket"}, {"Connection": "Upgrade"}, {"Sec-WebSocket-Accept": accept_response}])
+    res.headers({"Upgrade": "websocket"})
+    res.headers({"Connection": "Upgrade"})
+    res.headers({"Sec-WebSocket-Accept": accept_response})
     handler.request.sendall(res.to_data())
 
     buffer = b""
     while True:
         #receive first chunk of 2048 bytes
         received_data = handler.request.recv(2048)
-        print(received_data)
+        # print("======== Received Data for ws =======")
+        # print(received_data)
+        # print("======== End Data =======")
 
         buffer += received_data
 

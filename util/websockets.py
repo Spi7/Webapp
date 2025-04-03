@@ -51,34 +51,22 @@ def generate_ws_frame(payload: bytes):
 
 
 def test_parse_frame():
-    frame = bytearray()
+    bytes = b'\x81\xa97\x02\x9d\x12L \xf0wDq\xfcuRV\xe4bR \xa70Ra\xf5}ha\xf1{Rl\xe90\x1b \xe9wOv\xbf(\x15j\xf40J'
 
-    byte0 = 0b10000001
-    frame.append(byte0)
+    expected_frame = wsFrame()
+    expected_frame.fin_bit = 1
+    expected_frame.opcode = 1
+    expected_frame.mask_bit = 1
+    expected_frame.payload_length = 41
+    expected_frame.payload = b'{"messageType":"echo_client","text":"hi"}'
 
-    byte1 = 0b00000001 #payload length = 1
-    frame.append(byte1)
+    actual_frame = parse_ws_frame(bytes)
 
-    payload = 0b00000000
-    frame.append(payload)
-
-    bytes_frame = bytes(frame)
-
-    expected = wsFrame()
-    expected.fin_bit = 1
-    expected.opcode = 1
-    expected.payload_length = 1
-
-    actual = wsFrame()
-    actual.parse_headers(bytes_frame)
-
-    assert expected.fin_bit == actual.fin_bit
-    assert expected.opcode == actual.opcode
-    assert expected.payload_length == actual.payload_length
-
-    expected.payload = b"00"
-    actual.parse_payload(bytes_frame)
-    assert expected.payload == actual.payload
+    assert expected_frame.fin_bit == actual_frame.fin_bit
+    assert expected_frame.opcode == actual_frame.opcode
+    assert expected_frame.mask_bit == actual_frame.mask_bit
+    assert expected_frame.payload_length == actual_frame.payload_length
+    assert expected_frame.payload == actual_frame.payload
 
 if __name__ == '__main__':
     test_parse_frame()
