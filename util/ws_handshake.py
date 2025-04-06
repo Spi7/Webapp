@@ -60,7 +60,8 @@ def handle_ws_connection(request, handler):
         #when buffer > the frame length, indicating more frame to be processed, process all before receiving new data, only receive new data when the frame doesn't have enough data to be parsed
         while len(buffer) >= 2:
             frame = wsFrame()
-            frame.parse_headers(received_data)
+            # frame.parse_headers(received_data)
+            frame.parse_headers(buffer)
             full_frame_length = frame.header_length + frame.payload_length
 
             #break to receive more data for buffer
