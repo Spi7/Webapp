@@ -39,6 +39,12 @@ def handle_ws_connection(request, handler):
     broadcast_active_users(active_connections) #broadcast new user connected
 
     buffer = b""
+    #continuation frame, first fin_bit = 0, opcode will be 0001, after first frame, all finbit = 0, opcode=0000, until last frame finbit=1, opcode still 0000
+    curr_frame_info = {
+        "payload": b"",
+        "opcode": None
+    }
+
     while True:
         #receive first chunk of 2048 bytes
         received_data = handler.request.recv(2048)
@@ -62,25 +68,35 @@ def handle_ws_connection(request, handler):
         buffer = buffer[full_frame_length:]
         whole_frame = parse_ws_frame(this_frame_bytes)
 
-        if whole_frame.opcode == 1:
-            json_payload = json.loads(whole_frame.payload.decode('utf-8'))
-            message_type = json_payload['messageType']
+        if curr_frame_info["opcode"] is None:
+            curr_frame_info["opcode"] = whole_frame.opcode
+        curr_frame_info["payload"] += whole_frame.payload
 
-            if message_type == "echo_client":
-                res_payload = json.dumps({"messageType": "echo_server","text":json_payload["text"]}).encode('utf-8')
-                res_frame = generate_ws_frame(res_payload)
-                handler.request.sendall(res_frame)
-            elif message_type == "drawing":
-                store_drawing(json_payload, active_connections)
+        if whole_frame.fin_bit == 1:
+            if curr_frame_info["opcode"] == 1:
+                json_payload = json.loads(curr_frame_info["payload"].decode('utf-8'))
+                message_type = json_payload['messageType']
 
-        #disconnection
-        elif whole_frame.opcode == 8:
-            del active_connections[username]
-            close_frame = generate_ws_frame(payload=b"")
-            handler.request.sendall(close_frame)
-            handler.request.close()
+                if message_type == "echo_client":
+                    res_payload = json.dumps({"messageType": "echo_server","text":json_payload["text"]}).encode('utf-8')
+                    res_frame = generate_ws_frame(res_payload)
+                    handler.request.sendall(res_frame)
+                elif message_type == "drawing":
+                    store_drawing(json_payload, active_connections)
 
-            broadcast_active_users(active_connections) #broadcast the user disconnected
-            return
+                #reset for next frame
+                curr_frame_info = {
+                    "payload": b"",
+                    "opcode": None
+                }
+            #disconnection
+            elif curr_frame_info["opcode"] == 8:
+                del active_connections[username]
+                close_frame = generate_ws_frame(payload=b"")
+                handler.request.sendall(close_frame)
+                handler.request.close()
+
+                broadcast_active_users(active_connections) #broadcast the user disconnected
+                return
 
 
