@@ -31,7 +31,8 @@ def send_all_drawings(user_connections):
 
 def broadcast_active_users(active_connections):
     all_users = []
-    for user in active_connections.keys():
+    copy_connection = list(active_connections.items())
+    for user, connection in copy_connection:
         curr_user = {"username": user}
         all_users.append(curr_user)
 
@@ -40,7 +41,7 @@ def broadcast_active_users(active_connections):
 
     res_frame = generate_ws_frame(res_payload.encode("utf-8"))
 
-    for user_connections in active_connections.values():
+    for user, user_connections in copy_connection:
         user_connections.sendall(res_frame)
 
 
