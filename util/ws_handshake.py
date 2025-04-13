@@ -4,6 +4,7 @@ from util.wsFrame import wsFrame
 from util.database import user_collection, drawing_collection
 from util.drawingboard import store_drawing, send_all_drawings, broadcast_active_users
 from util.direct_message import get_all_users, get_dm_history, send_dm
+from util.videocall import send_call_list, join_room_call, webRTC_messages, disconnect
 
 import hashlib
 import json
@@ -96,6 +97,12 @@ def handle_ws_connection(request, handler):
                     elif message_type == "direct_message":
                         from_user = username
                         send_dm(from_user, json_payload, active_connections)
+                    elif message_type == "get_calls":
+                        send_call_list(active_connections)
+                    elif message_type == "join_call":
+                        join_room_call(json_payload, username, active_connections[username])
+                    elif message_type in ["offer", "answer", "ice_candidate"]:
+                        webRTC_messages(json_payload, username)
 
                     #reset for next frame
                     curr_frame_info = {
@@ -104,6 +111,8 @@ def handle_ws_connection(request, handler):
                     }
                 #disconnection
                 elif curr_frame_info["opcode"] == 8:
+                    disconnect(username)
+
                     del active_connections[username]
                     close_frame = generate_ws_frame(payload=b"")
                     handler.request.sendall(close_frame)

@@ -12,6 +12,7 @@ from util.upload_video import select_video_method
 from util.transcript import subtitle_api
 from util.thumbnail import set_thumbnail
 from util.ws_handshake import handle_ws_connection
+from util.videocall import create_room
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
@@ -67,6 +68,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.router.add_route("GET", "/drawing-board", public_path, True)
         self.router.add_route("GET", "/direct-messaging", public_path, True)
         self.router.add_route("GET", "/video-call", public_path, False)
+        #HW4 VideoCall
+        self.router.add_route("POST", "/api/video-calls", create_room, False)
 
         super().__init__(request, client_address, server)
 
