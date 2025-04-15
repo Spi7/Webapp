@@ -11,7 +11,10 @@ mime_types = {
     ".ico": "image/x-icon",
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
-    ".webp": "image/webp"
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".m3u8": "application/vnd.apple.mpegurl",
+    ".ts": "video/mp2t"
 }
 
 def get_file_extension(file_name):
@@ -36,6 +39,28 @@ def public_path(request, handler):
         file_path = "public/search-users.html"
     elif request.path == "/settings":
         file_path = "public/settings.html"
+    elif request.path == "/change-avatar":
+        file_path = "public/change-avatar.html"
+    elif request.path.startswith("/videotube"):
+        if request.path.startswith("/videotube/upload"):
+            file_path = "public/upload.html"
+        elif request.path.startswith("/videotube/videos"):
+            file_path = "public/view-video.html"
+        elif request.path.startswith("/videotube/set-thumbnail"):
+            file_path = "public/set-thumbnail.html"
+        else:
+            file_path = "public/videotube.html"
+    elif request.path == "/test-websocket":
+        file_path = "public/test-websocket.html"
+    elif request.path == "/drawing-board":
+        file_path = "public/drawing-board.html"
+    elif request.path == "/direct-messaging":
+        file_path = "public/direct-messaging.html"
+    elif request.path.startswith("/video-call"):
+        if request.path == "/video-call":
+            file_path = "public/video-call.html"
+        else:
+            file_path = "public/video-call-room.html"
     else:
         file_path = request.path.split("/public", 1)[1]
         file_path = "public" + file_path

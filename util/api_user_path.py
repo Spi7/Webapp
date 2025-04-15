@@ -1,8 +1,10 @@
 from util.response import Response
 from util.database import user_collection
 from util.auth import extract_credentials, validate_password
+from util.avatar import change_avatar
 import hashlib
 import bcrypt
+
 
 def select_method(request, handler):
     if request.method == 'GET':
@@ -13,6 +15,8 @@ def select_method(request, handler):
     elif request.method == 'POST':
         if request.path.startswith("/api/users/settings"):
             update_profile(request, handler)
+        elif request.path.startswith("/api/users/avatar"):
+            change_avatar(request, handler)
 
 
 def profile_display(request, handler):
@@ -22,7 +26,7 @@ def profile_display(request, handler):
         hashed_auth_token = hashlib.sha256(auth_token.encode('utf-8')).hexdigest()
         user_data = user_collection.find_one({'session': hashed_auth_token})
 
-        username_and_user_id = {"username": user_data["author"], "id": user_data["user_id"],"nickname": user_data["nickname"]}
+        username_and_user_id = {"username": user_data["author"], "id": user_data["user_id"],"nickname": user_data["nickname"], "imageURL": user_data.get("imageURL", None)}
         res.json(username_and_user_id)
     else:
         res.set_status(401, "Unauthorized")

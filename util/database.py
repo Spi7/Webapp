@@ -17,3 +17,7 @@ db = mongo_client["cse312"]
 
 chat_collection = db["chat"]
 user_collection = db["user"]
+video_collection = db["video"]
+drawing_collection = db["drawing"]
+dm_collection = db["dm"]
+video_call_collection = db["video_call"]
